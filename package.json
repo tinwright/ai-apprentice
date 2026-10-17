@@ -1,0 +1,20 @@
+{
+  "name": "ai-apprentice",
+  "private": true,
+  "type": "module",
+  "description": "Plugins, skills and mods for Claude Code, with a catalog site.",
+  "license": "MIT",
+  "scripts": {
+    "create": "node scripts/create.mjs",
+    "check": "node scripts/check.mjs",
+    "test": "node --test \"scripts/*.test.mjs\" && node scripts/test-plugins.mjs",
+    "build": "node scripts/build-site.mjs",
+    "dev": "npm run build && node scripts/serve.mjs dist"
+  },
+  "devDependencies": {
+    "marked": "18.1.0"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

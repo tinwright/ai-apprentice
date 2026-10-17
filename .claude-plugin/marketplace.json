@@ -1,0 +1,16 @@
+{
+  "name": "tinwright",
+  "owner": {
+    "name": "tinwright"
+  },
+  "description": "Plugins, skills and mods for Claude Code, from the tinwright workshops.",
+  "plugins": [
+    {
+      "name": "example",
+      "source": "./plugins/example",
+      "description": "A starting point: a mod with one slash command (/example) that says hello.",
+      "category": "Mod",
+      "tags": ["mod", "example"]
+    }
+  ]
+}

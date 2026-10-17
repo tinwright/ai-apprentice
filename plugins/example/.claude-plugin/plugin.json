@@ -1,0 +1,6 @@
+{
+  "name": "example",
+  "displayName": "Example",
+  "description": "A starting point: a mod with one slash command (/example) that says hello. Copy it with npm run create.",
+  "author": { "name": "tinwright" }
+}

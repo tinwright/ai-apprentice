@@ -1,0 +1,25 @@
+name: Private-data guard
+
+on:
+  # pull_request_target runs this file from main with the repository's secrets, so pull requests
+  # from forks are checked too. It only reads the pull request's files and never runs them; the
+  # guard itself comes from tinwright/actions, never from the pull request.
+  pull_request_target:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: tinwright/actions/private-data-guard@main
+        with:
+          patterns: ${{ secrets.PRIVATE_DATA_PATTERNS }}
