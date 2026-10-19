@@ -1,0 +1,35 @@
+{
+  "name": "current-affairs",
+  "displayName": "Current Affairs",
+  "description": "Panes of your recent Claude Code sessions across all projects: grouped by repo and GitHub issue or branch with what each piece of work cost (/work), with this session's context and usage limits, and last week's activity and hours worked, with trends (/timeline).",
+  "author": {
+    "name": "Sam Thomas"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "titles": {
+      "type": "string",
+      "title": "Issue titles",
+      "description": "Where issue rows get their titles. github looks up each issue's title and Project status with gh; none uses chat titles and looks nothing up.",
+      "options": [
+        "github",
+        "none"
+      ],
+      "default": "github"
+    },
+    "default_branches": {
+      "type": "string",
+      "title": "Default branches",
+      "description": "Comma-separated branch names that never stand for a piece of work.",
+      "default": "main, master, develop, trunk"
+    },
+    "context_warning": {
+      "type": "number",
+      "title": "Context warning",
+      "description": "Warn once this session's context is this full, in percent, and again at 90%. 0 turns the warning off.",
+      "default": 80,
+      "min": 0,
+      "max": 100
+    }
+  }
+}
