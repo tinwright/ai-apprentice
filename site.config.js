@@ -19,5 +19,8 @@ export default {
   license: 'MIT',
   branch: 'main',
   itemsDir: 'plugins',
-  items: {},
+  items: {
+    // The template's example: kept as a model for new tools and for the tests, but not listed.
+    example: { hidden: true },
+  },
 };

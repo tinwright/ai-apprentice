@@ -28,8 +28,7 @@ choose **Enable auto-update**.
 npm install
 npm run create -- my-plugin --description "What it does, in one sentence."
 npm run check          # this workshop's rules, plus a scan for secrets
-npm test               # the site, and every plugin against the real engine
-npm run dev            # the catalog site at http://localhost:3000
+npm test               # every plugin against the real engine
 claude --plugin-dir ./plugins/my-plugin   # try it without installing
 ```
 

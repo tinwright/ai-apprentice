@@ -32,7 +32,7 @@ export const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)
  *   license?: string,
  *   branch?: string,
  *   itemsDir: string,
- *   items?: Record<string, ItemText & { focus?: string, translations?: Record<string, ItemText> }>,
+ *   items?: Record<string, ItemText & { focus?: string, hidden?: boolean, translations?: Record<string, ItemText> }>,
  * }} SiteConfig
  */
 

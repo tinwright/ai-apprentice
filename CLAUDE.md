@@ -55,7 +55,7 @@ For the hooks API, load Claude Code's plugin-authoring skill, or read the types 
 
 ```sh
 npm run check   # names, READMEs, tests, template leftovers, the marketplace, claude plugin validate, secrets
-npm test        # the catalog site, and every plugin through the real engine
+npm test        # every plugin through the real engine
 ```
 
 CI runs both, and the private-data guard, which fails on company hosts, internal IDs and work
@@ -66,8 +66,9 @@ Commit messages are conventional commits scoped to the plugin: `feat(word-count)
 
 ### Site
 
-`npm run build` writes the catalog site to `dist/` from every plugin's READMEs and
-`screenshot.png`; `npm run dev` serves it at http://localhost:3000. `site.config.js` holds the
-title, tagline, languages and per-plugin overrides (`kicker`, `title`, `focus`). The install steps
-on each page come from `scripts/page.js`'s extension points. The build also writes `items.json`,
-which the org-wide gallery at https://tinwright.github.io reads.
+The catalog site at https://tinwright.github.io/ai-apprentice is built by `tinwright.github.io` from a
+checkout of this repo, hourly and on demand; nothing here builds or deploys it. It reads every
+plugin's READMEs and `screenshot.png`. `site.config.js` holds the title, tagline, languages and
+per-plugin overrides (`kicker`, `title`, `focus`, `hidden`), and `scripts/site.mjs` the nouns, the
+Type fact and the install steps on each page. To see it, run `npm run dev` in
+`tinwright.github.io`, cloned next to this repo; its `npm test` checks every page and link.

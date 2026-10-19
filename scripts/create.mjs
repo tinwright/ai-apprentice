@@ -52,4 +52,4 @@ Next:
   1. Make it do its job, and write its tests (the template's show the shape).
   2. Translate the description in README.fr.md and README.es.md.
   3. npm run check && npm test
-  4. npm run dev to see its page on the catalog site.`);
+  4. To see its page, run npm run dev in tinwright.github.io, cloned next to this repo.`);
