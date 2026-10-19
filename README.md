@@ -29,6 +29,8 @@ npm install
 npm run create -- my-plugin --description "What it does, in one sentence."
 npm run check          # this workshop's rules, plus a scan for secrets
 npm test               # every plugin against the real engine
+npm run eval -- my-plugin   # how well it does its job, kept in its evals/history.jsonl
+npm run rollup         # every plugin's eval trends
 claude --plugin-dir ./plugins/my-plugin   # try it without installing
 ```
 
