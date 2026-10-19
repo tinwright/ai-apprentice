@@ -7,7 +7,9 @@
   "scripts": {
     "create": "node scripts/create.mjs",
     "check": "node scripts/check.mjs",
-    "test": "node --test \"scripts/*.test.mjs\" && node scripts/test-plugins.mjs"
+    "test": "node --test \"scripts/*.test.mjs\" && node scripts/test-plugins.mjs",
+    "eval": "node scripts/eval.mjs",
+    "rollup": "node scripts/rollup.mjs"
   },
   "devDependencies": {
     "marked": "18.1.0"

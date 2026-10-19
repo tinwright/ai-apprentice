@@ -3,3 +3,6 @@ dist/
 build/
 .DS_Store
 *.log
+plugins/*/.claude-plugin/types/
+# An eval run's full output, with prompts, answers and paths from this machine. Only history.jsonl is kept.
+plugins/*/evals/results/

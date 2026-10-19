@@ -47,6 +47,9 @@ prefixes, and they read as official).
   `$.ui.mount`...), not mocks of the plugin's own functions.
 - `README.md`, `README.fr.md`, `README.es.md`: the first paragraph under the title is the
   description on the catalog site. Translations are France French and neutral Spanish.
+- `evals/`: cases for `claude plugin eval`, each a `prompt.md` and `graders/*.md` (start with
+  `claude plugin eval init` in the plugin's folder), and `history.jsonl`, one line per
+  `npm run eval`. `evals/results/` is each run's full output and stays out of git.
 - `screenshot.png`, optional: the plugin's card image on the site.
 
 For the hooks API, load Claude Code's plugin-authoring skill, or read the types it points to.
@@ -61,6 +64,24 @@ npm test        # every plugin through the real engine
 CI runs both, and the private-data guard, which fails on company hosts, internal IDs and work
 email addresses anywhere in the change or its commits. Never write any of those, even as examples:
 use `example.com`, `owner/repo` and made-up names.
+
+### Evals
+
+Tests say a plugin works; evals say how well, and whether a change made it better. They're real
+model runs, graded by a model, so they cost money and vary a little: run them by hand, never in
+`npm test` or CI.
+
+```sh
+npm run eval -- <plugin> [--runs 1 --case <glob> --model sonnet ...]   # options go to claude plugin eval
+npm run rollup [-- <plugin>] [--json] [--strict]                         # trends and regressions
+```
+
+`npm run eval` runs `claude plugin eval` (each case with and without the plugin), then adds a line
+to `evals/history.jsonl`: scores, the edge over no plugin, cost, turns, tokens and tools per run
+(from the traces, which it then deletes), the always-on token cost from `claude plugin details`,
+and the commit. Only numbers and case names, so commit it with the change it measured.
+`npm run rollup` shows every plugin's latest run, its trend, and what got worse since the run
+before: a score down 0.1 or more, or cost or tokens up more than 20%.
 
 Commit messages are conventional commits scoped to the plugin: `feat(word-count): count selections`.
 
