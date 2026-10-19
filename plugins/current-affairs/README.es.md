@@ -2,7 +2,7 @@
 
 🇬🇧 [English](README.md) · 🇫🇷 [Français](README.fr.md)
 
-Un mod de Claude Code que añade paneles construidos a partir de tus sesiones locales de Claude Code: tu trabajo reciente agrupado por repositorio y por issue de GitHub o rama (`/work`), cuánto ocupa el contexto de la sesión actual y cuánto has usado de tus límites de uso, y una cronología de tu actividad (`/timeline`).
+Un mod de Claude Code que añade paneles construidos a partir de tus sesiones locales de Claude Code: tu trabajo reciente agrupado por repositorio y por issue de GitHub o rama, con lo que costó cada tarea (`/work`), cuánto ocupa el contexto de la sesión actual y cuánto has usado de tus límites de uso, y tu actividad y horas trabajadas de la última semana, con tendencias (`/timeline`).
 
 ## Instalación
 

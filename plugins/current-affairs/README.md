@@ -2,7 +2,7 @@
 
 🇫🇷 [Français](README.fr.md) · 🇪🇸 [Español](README.es.md)
 
-A Claude Code mod that adds panes built from your local Claude Code sessions: your recent work grouped by repo and by GitHub issue or branch (`/work`), how full this session's context is and how much of your usage limits you've used, and an activity timeline (`/timeline`).
+A Claude Code mod that adds panes built from your local Claude Code sessions: your recent work grouped by repo and by GitHub issue or branch, with what each piece of work cost (`/work`), how full this session's context is and how much of your usage limits you've used, and last week's activity and hours worked, with trends (`/timeline`).
 
 ## Install
 

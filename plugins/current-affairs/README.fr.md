@@ -2,7 +2,7 @@
 
 🇬🇧 [English](README.md) · 🇪🇸 [Español](README.es.md)
 
-Un mod Claude Code qui ajoute des panneaux construits à partir de vos sessions Claude Code locales : votre travail récent regroupé par dépôt et par ticket GitHub ou par branche (`/work`), le remplissage du contexte de la session en cours et ce que vous avez consommé de vos limites d'utilisation, et une chronologie de votre activité (`/timeline`).
+Un mod Claude Code qui ajoute des panneaux construits à partir de vos sessions Claude Code locales : votre travail récent regroupé par dépôt et par ticket GitHub ou par branche, avec ce que chaque sujet a coûté (`/work`), le remplissage du contexte de la session en cours et ce que vous avez consommé de vos limites d'utilisation, et votre activité et vos heures de travail de la semaine écoulée, avec des tendances (`/timeline`).
 
 ## Installation
 
