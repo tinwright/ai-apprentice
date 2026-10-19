@@ -11,6 +11,13 @@
       "description": "A starting point: a mod with one slash command (/example) that says hello.",
       "category": "Mod",
       "tags": ["mod", "example"]
+    },
+    {
+      "name": "current-affairs",
+      "source": "./plugins/current-affairs",
+      "description": "Panes of your recent Claude Code sessions across all projects, by repo and GitHub issue or branch (/work), with this session's context and usage limits, and a two-week activity timeline (/timeline).",
+      "category": "Mod",
+      "tags": ["mod", "dashboard", "sessions", "usage"]
     }
   ]
 }
