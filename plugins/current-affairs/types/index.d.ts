@@ -69,6 +69,8 @@ declare module 'claude-code' {
       // kept in view (false) though its issue is closed.
       hidden: Record<string, number | false>
       showHidden: boolean
+      // Sessions too long to read without jq, found missing in the last scan.
+      unreadSessions: number
     }
   }
 }

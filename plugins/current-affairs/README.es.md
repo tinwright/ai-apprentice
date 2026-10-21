@@ -33,7 +33,8 @@ Solo lee tus transcripciones locales (`~/.claude/projects`), git, y GitHub media
 
 ## Requisitos
 
-- `jq` y `git` en tu `PATH`.
+- `git` en tu `PATH`.
+- `jq` en tu `PATH` para las sesiones cuya transcripción supera los 4 MB. Sin él, esas sesiones se omiten y el panel indica cuántas.
 - `gh`, con sesión iniciada, para los títulos de las issues y las tendencias de pull requests. El estado en GitHub Projects también necesita el permiso `read:project` (`gh auth refresh -s read:project`). Sin él, las filas muestran solo el título, o `closed` cuando la issue está cerrada.
 
 ## Desarrollo

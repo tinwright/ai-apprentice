@@ -33,7 +33,8 @@ It only reads your local transcripts (`~/.claude/projects`), git, and GitHub thr
 
 ## What it needs
 
-- `jq` and `git` on your `PATH`.
+- `git` on your `PATH`.
+- `jq` on your `PATH` for sessions whose transcript is over 4 MB. Without it, those sessions are left out and the pane says how many.
 - `gh`, logged in, for issue titles and the PR trends. Project status also needs the `read:project` scope (`gh auth refresh -s read:project`). Without it, rows show the title alone, or `closed` once the issue is closed.
 
 ## Developing

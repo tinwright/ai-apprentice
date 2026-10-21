@@ -20,6 +20,7 @@ import { isFinished, issueViewArgs, parseIssue, staleRefs, titleOf, type TitleCo
 import { axis, buildTimeline, dailyBars, dayHours, DAYS, formatHours, laneRuns, pickCellsPerDay } from './timeline'
 import { contextWarning, levelColor, meter, tokens, usageRows } from './usage'
 import { costOf, formatUsd } from './pricing'
+import { summarize } from './summarize'
 
 const PANE = 'current-affairs'
 const TIMELINE = 'current-affairs-timeline'
@@ -41,6 +42,8 @@ const TREND_ROWS: {
   { key: 'ticketsPerDay', label: 'Items / day', isHigherBetter: false, format: n => n.toFixed(1) },
 ]
 const RESCAN_MS = 5 * 60_000
+// The most one $.fs.read takes: 4 MiB.
+const READ_LIMIT = 4 * 1024 * 1024
 const METER_PX = 120
 
 // A rounded meter for surfaces that draw SVG: green, then amber past 70%, red past 90%, as levelColor.
@@ -66,6 +69,7 @@ const lastTurn = atom({ plugin: 'current-affairs', key: 'lastTurn' } as const, n
 const contextWarned = atom({ plugin: 'current-affairs', key: 'contextWarned' } as const, 0)
 const hidden = atom({ plugin: 'current-affairs', key: 'hidden' } as const, {})
 const showHidden = atom({ plugin: 'current-affairs', key: 'showHidden' } as const, false)
+const unreadSessions = atom({ plugin: 'current-affairs', key: 'unreadSessions' } as const, 0)
 
 type Cached = { mtimeMs: number; size: number; summary: Summary }
 
@@ -173,18 +177,30 @@ async function scan($: EngineInterface) {
     const cache = ((await $.store.get('summaries.v5')) ?? {}) as Record<string, Cached>
     const fresh: Record<string, Cached> = {}
     const jq = `${$.plugin.root}/hooks/summarize.jq`
+    // Transcripts up to what one $.fs.read takes are summarized here; longer ones need jq, and are
+    // counted when it's missing so the pane can say so.
+    let unread = 0
     await pool([...files, ...subagentFiles], PARALLEL, async file => {
       const hit = cache[file.path]
       if (hit && hit.mtimeMs === file.mtimeMs && hit.size === file.size) {
         fresh[file.path] = hit
         return
       }
-      const run = await $.process.run(['jq', '-Rnc', '-f', jq, file.path], { timeoutMs: 60_000 })
-      if (run.exitCode !== 0) return
+      if (file.size <= READ_LIMIT) {
+        const text = await $.fs.read(file.path).catch(() => undefined)
+        if (text !== undefined) fresh[file.path] = { mtimeMs: file.mtimeMs, size: file.size, summary: summarize(text) }
+        return
+      }
+      const run = await $.process.run(['jq', '-Rnc', '-f', jq, file.path], { timeoutMs: 60_000 }).catch(() => undefined)
+      if (!run || run.exitCode !== 0) {
+        if (!('parent' in file)) unread += 1
+        return
+      }
       try {
         fresh[file.path] = { mtimeMs: file.mtimeMs, size: file.size, summary: JSON.parse(run.stdout) }
       } catch {}
     })
+    await $.state.set({ plugin: 'current-affairs', key: 'unreadSessions' }, unread)
     await $.store.set('summaries.v5', fresh)
     void $.store.delete('summaries.v4')
 
@@ -331,6 +347,7 @@ export const register: Register = (on, options) => {
     const live = await read($, usage)
     const putAway = await read($, hidden)
     const isShowingHidden = await read($, showHidden)
+    const unread = await read($, unreadSessions)
     const nowMs = await $.clock.now()
     const list = scanned.filter(s => s.lastMs >= nowMs - WINDOW_DAYS * 86_400_000)
     const width = Math.max(30, e.props.bodyColumns ?? e.viewport?.columns ?? 80)
@@ -558,6 +575,11 @@ export const register: Register = (on, options) => {
         </Box>
         {usageBlock()}
         {list.length === 0 && !isScanning && <Text dimColor>No sessions found.</Text>}
+        {unread > 0 && (
+          <Text dimColor>
+            {unread} long {unread === 1 ? 'session needs' : 'sessions need'} jq to show here.
+          </Text>
+        )}
         {sections.map(section => {
           const isExpanded = isOpen(section.key)
           const isFlat = section.isFlat
