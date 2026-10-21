@@ -75,6 +75,10 @@ test('the pane leads with this session\'s context and the account\'s limits', as
     expect((await ui.find({ key: 'usage:cost' }))?.text).toContain('$1.25')
     expect((await ui.find({ key: 'usage:five_hour' }))?.text).toContain('5-hour limit')
     expect((await ui.find({ key: 'usage:seven_day' }))?.text).toContain('91%')
+    // The terminal draws each meter in block characters, every other surface as a drawn bar.
+    const meter = JSON.stringify((await ui.find({ key: 'usage:context' }))?.children)
+    if (surface === 'terminal') expect(meter).toContain('█')
+    else expect(meter).toContain('<svg')
     // Each past session says how full its context was when it stopped.
     expect((await ui.find({ key: 'row:s1' }))?.text).toContain('84k ctx')
     await ui.unmount()

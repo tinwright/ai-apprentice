@@ -94,9 +94,16 @@ test('the Last week pane draws lanes, the axis and the legend on every surface',
     })
     // 20 minutes on the 11th, 5 on the 5th: 25 minutes for the week.
     expect(await ui.find({ type: 'Text', text: /0\.4h worked · 2 sessions · 2\/7 active days/ })).toBeDefined()
-    expect((await ui.find({ key: 'hours' }))?.text).toContain('0.3h')
     expect(await ui.find({ type: 'Text', text: /#1 chat/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /Su11/ })).toBeDefined()
+    if (surface === 'terminal') {
+      expect((await ui.find({ key: 'hours' }))?.text).toContain('0.3h')
+      expect(await ui.find({ type: 'Text', text: /Su11/ })).toBeDefined()
+    } else {
+      // Everywhere else the axis and the hours are drawn, and say what they show to a screen reader.
+      const drawn = async (key: string) => JSON.stringify((await ui.find({ key }))?.children)
+      expect(await drawn('hours')).toContain('Su11 0.3h')
+      expect(await drawn('axis')).toContain('Su11')
+    }
     expect(await ui.find({ type: 'Text', text: /repo-a/ })).toBeDefined()
     await ui.unmount()
   }

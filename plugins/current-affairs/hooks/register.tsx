@@ -17,7 +17,7 @@ import {
 import { closingIssue, computeTrends, direction, mergeHistory, type History, type MergedPr } from './trends'
 import { pool } from './pool'
 import { isFinished, issueViewArgs, parseIssue, staleRefs, titleOf, type TitleConfig } from './titles'
-import { axis, buildTimeline, dailyBars, dayHours, DAYS, formatHours, laneRuns, pickCellsPerDay } from './timeline'
+import { axis, axisSvg, buildTimeline, dailyBars, dailySvg, dayHours, DAYS, formatHours, hoursSvg, laneRuns, laneSvg, pickCellsPerDay, TIMELINE_PX, EXPLORATION_COLOR } from './timeline'
 import { contextWarning, levelColor, meter, tokens, usageRows } from './usage'
 import { costOf, formatUsd } from './pricing'
 import { summarize } from './summarize'
@@ -336,8 +336,8 @@ export const register: Register = (on, options) => {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const elements = $.ui.resolve(e)
     const { Box, Text, Button } = elements
-    // Svg is on every surface but the terminal.
-    const Svg = 'Svg' in elements ? elements.Svg : undefined
+    // Svg is on every surface but the terminal, where resolve hands back a stand-in that draws nothing.
+    const Svg = e.surface !== 'terminal' && 'Svg' in elements ? elements.Svg : undefined
     const scanned = await read($, sessions)
     const turn = await read($, lastTurn)
     const flipped = await read($, toggled)
@@ -608,7 +608,9 @@ export const register: Register = (on, options) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: TIMELINE }, async ($, e) => {
-    const { Box, Text } = $.ui.resolve(e)
+    const elements = $.ui.resolve(e)
+    const { Box, Text } = elements
+    const Svg = e.surface !== 'terminal' && 'Svg' in elements ? elements.Svg : undefined
     const list = await read($, sessions)
     const issues = await read($, titles)
     const tz = await read($, tzOffset)
@@ -619,7 +621,8 @@ export const register: Register = (on, options) => {
     const fit = (text: string, room: number) =>
       (text.length <= room ? text : `${text.slice(0, Math.max(1, room - 1))}…`).padEnd(room)
 
-    const cellsPerDay = pickCellsPerDay(width - labelWidth - 1)
+    // Drawn as SVG, a day has room for 3-hour cells whatever the pane's width.
+    const cellsPerDay = Svg ? 8 : pickCellsPerDay(width - labelWidth - 1)
     const t = buildTimeline(list, issues, nowMs, tz, cellsPerDay)
     const max = Math.max(1, ...t.lanes.flatMap(lane => lane.cells))
     const room = Math.max(3, (e.viewport?.rows ?? 40) - (trend ? 16 : 10))
@@ -627,6 +630,80 @@ export const register: Register = (on, options) => {
     const lanes = t.lanes.filter(lane => shown.includes(lane))
     const gutter = ' '.repeat(labelWidth + 1)
     const hoursRow = dayHours(t.hoursByDay, cellsPerDay)
+
+    const trendArrow = (row: (typeof TREND_ROWS)[number]) => {
+      const m = trend![row.key]
+      const way = direction(m, row.isHigherBetter)
+      const arrow = way === undefined ? ' ' : way === 'same' ? '→' : (m.current ?? 0) > (m.baseline ?? 0) ? '↑' : '↓'
+      const color = way === 'better' ? 'green' : way === 'worse' ? 'yellow' : undefined
+      return { m, way, arrow, color }
+    }
+
+    // Outside the terminal, the lanes are drawn bars beside a fixed-width label column, and the
+    // trends a table of fixed-width columns, since text in a proportional face doesn't line up.
+    if (Svg) {
+      const svgLabelWidth = Math.min(24, Math.max(12, width - Math.round(TIMELINE_PX / 7) - 2))
+      const row = (key: string, name: string | undefined, color: string | undefined, isDim: boolean, chart: string, alt: string) => (
+        <Box key={key} flexDirection="row" gap={1} alignItems="center">
+          <Box width={svgLabelWidth}>
+            {name !== undefined && (
+              <Text color={color} dimColor={isDim} wrap="truncate-end">
+                {name}
+              </Text>
+            )}
+          </Box>
+          <Svg source={chart} alt={alt} width={TIMELINE_PX} />
+        </Box>
+      )
+      return (
+        <Box flexDirection="column" gap={1}>
+          <Text dimColor>
+            {formatHours(t.hours)} worked · {t.sessionCount} sessions · {t.activeDays}/{DAYS} active days · {t.prCount} PRs
+            {t.busiestDay ? ` · busiest ${t.busiestDay}` : ''}
+          </Text>
+          <Box flexDirection="column" gap={1}>
+            {row('axis', undefined, undefined, false, axisSvg(t.dayLabels, t.todayIndex), t.dayLabels.join(', '))}
+            {lanes.map(lane => row(`lane:${lane.key}`, lane.label, lane.color, false, laneSvg(lane.cells, cellsPerDay, max, lane.color), `${lane.label}: activity by day`))}
+            {lanes.length < t.lanes.length && (
+              <Text dimColor>+{t.lanes.length - lanes.length} quieter lanes</Text>
+            )}
+            {row('all', 'all work', undefined, true, dailySvg(t.daily, '#48c1c4'), 'All work by day')}
+            {t.hours > 0 &&
+              row('hours', 'hours worked', undefined, true, hoursSvg(t.hoursByDay),
+                `Hours worked: ${t.dayLabels.map((day, i) => `${day} ${formatHours(t.hoursByDay[i] ?? 0)}`).join(', ')}`)}
+          </Box>
+          <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
+            {[...t.repos, { name: 'exploration', color: EXPLORATION_COLOR }].map(repo => (
+              <Text key={`key:${repo.name}`}>
+                <Text color={repo.color}>●</Text> {repo.name}
+              </Text>
+            ))}
+          </Box>
+          {trend && (
+            <Box flexDirection="column">
+              <Box flexDirection="row">
+                <Box width={16}><Text weight="medium">Trends</Text></Box>
+                <Box width={12}><Text dimColor>last 2 wks</Text></Box>
+                <Text dimColor>prior 6 wks, per 2 wks</Text>
+              </Box>
+              {TREND_ROWS.map(r => {
+                const { m, way, arrow, color } = trendArrow(r)
+                return (
+                  <Box key={`trend:${r.key}`} flexDirection="row">
+                    <Box width={16}><Text>{r.label}</Text></Box>
+                    <Box width={8}><Text tabular>{m.current === undefined ? '—' : r.format(m.current)}</Text></Box>
+                    <Box width={4}><Text color={color} dimColor={way === 'same'}>{arrow}</Text></Box>
+                    <Text tabular dimColor>
+                      {m.baseline !== undefined ? r.format(m.baseline) : `building baseline (${m.baselineDays} active days saved)`}
+                    </Text>
+                  </Box>
+                )
+              })}
+            </Box>
+          )}
+        </Box>
+      )
+    }
 
     return (
       <Box flexDirection="column">
@@ -678,11 +755,7 @@ export const register: Register = (on, options) => {
               {'last 2 wks'.padEnd(13)}prior 6 wks, per 2 wks
             </Text>
             {TREND_ROWS.map(row => {
-              const m = trend[row.key]
-              const way = direction(m, row.isHigherBetter)
-              const arrow =
-                way === undefined ? ' ' : way === 'same' ? '→' : (m.current ?? 0) > (m.baseline ?? 0) ? '↑' : '↓'
-              const color = way === 'better' ? 'green' : way === 'worse' ? 'yellow' : undefined
+              const { m, way, arrow, color } = trendArrow(row)
               return (
                 <Text>
                   {fit(row.label, 16)}
