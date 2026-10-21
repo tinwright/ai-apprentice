@@ -505,7 +505,7 @@ export const register: Register = (on, options) => {
                 </Box>
                 <Svg source={meterSvg(r.percent)} alt={`${r.label}: ${Math.round(r.percent)}%`} width={METER_PX} height={8} />
                 <Box width={5}>
-                  <Text tabular weight="medium">{`${Math.round(r.percent)}%`}</Text>
+                  <Text>{`${Math.round(r.percent)}%`}</Text>
                 </Box>
                 <Text dimColor>{r.detail}</Text>
               </Box>
@@ -515,9 +515,9 @@ export const register: Register = (on, options) => {
                 <Box width={labelWidth + 1}>
                   <Text>Cost</Text>
                 </Box>
-                <Text tabular>${live.costUsd.toFixed(2)}</Text>
+                <Text>${live.costUsd.toFixed(2)}</Text>
                 <Text dimColor>this session</Text>
-                {turn && <Text tabular dimColor>· ${turn.usd.toFixed(2)} last turn, {duration(turn.durationMs)}</Text>}
+                {turn && <Text dimColor>· ${turn.usd.toFixed(2)} last turn, {duration(turn.durationMs)}</Text>}
               </Box>
             )}
           </Box>
@@ -682,7 +682,7 @@ export const register: Register = (on, options) => {
           {trend && (
             <Box flexDirection="column">
               <Box flexDirection="row">
-                <Box width={16}><Text weight="medium">Trends</Text></Box>
+                <Box width={16}><Text bold>Trends</Text></Box>
                 <Box width={12}><Text dimColor>last 2 wks</Text></Box>
                 <Text dimColor>prior 6 wks, per 2 wks</Text>
               </Box>
@@ -691,9 +691,9 @@ export const register: Register = (on, options) => {
                 return (
                   <Box key={`trend:${r.key}`} flexDirection="row">
                     <Box width={16}><Text>{r.label}</Text></Box>
-                    <Box width={8}><Text tabular>{m.current === undefined ? '—' : r.format(m.current)}</Text></Box>
+                    <Box width={8}><Text>{m.current === undefined ? '—' : r.format(m.current)}</Text></Box>
                     <Box width={4}><Text color={color} dimColor={way === 'same'}>{arrow}</Text></Box>
-                    <Text tabular dimColor>
+                    <Text dimColor>
                       {m.baseline !== undefined ? r.format(m.baseline) : `building baseline (${m.baselineDays} active days saved)`}
                     </Text>
                   </Box>
