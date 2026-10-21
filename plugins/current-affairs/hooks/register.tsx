@@ -41,6 +41,17 @@ const TREND_ROWS: {
   { key: 'ticketsPerDay', label: 'Items / day', isHigherBetter: false, format: n => n.toFixed(1) },
 ]
 const RESCAN_MS = 5 * 60_000
+const METER_PX = 120
+
+// A rounded meter for surfaces that draw SVG: green, then amber past 70%, red past 90%, as levelColor.
+function meterSvg(percent: number): string {
+  const fill = Math.round((Math.min(100, Math.max(0, percent)) / 100) * METER_PX)
+  const color = percent >= 90 ? '#e5534b' : percent >= 70 ? '#d29922' : '#3fb950'
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${METER_PX}" height="8" viewBox="0 0 ${METER_PX} 8">`
+    + `<rect width="${METER_PX}" height="8" rx="4" fill="#8b949e" fill-opacity="0.25"/>`
+    + (fill > 0 ? `<rect width="${Math.max(8, fill)}" height="8" rx="4" fill="${color}"/>` : '')
+    + '</svg>'
+}
 const PARALLEL = 6
 
 const sessions = atom({ plugin: 'current-affairs', key: 'sessions' } as const, [])
@@ -307,7 +318,10 @@ export const register: Register = (on, options) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const elements = $.ui.resolve(e)
+    const { Box, Text, Button } = elements
+    // Svg is on every surface but the terminal.
+    const Svg = 'Svg' in elements ? elements.Svg : undefined
     const scanned = await read($, sessions)
     const turn = await read($, lastTurn)
     const flipped = await read($, toggled)
@@ -462,6 +476,36 @@ export const register: Register = (on, options) => {
       const duration = (ms: number) => (ms < 60_000 ? `${Math.round(ms / 1000)}s` : `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`)
       const labelWidth = Math.max(4, ...rows.map(r => r.label.length)) + 1
       const barWidth = Math.max(8, Math.min(24, width - labelWidth - 28))
+      // Block characters only line up in a monospaced terminal; elsewhere each meter is a drawn bar
+      // and the label sits in a fixed-width column.
+      if (Svg) {
+        return (
+          <Box key="usage" flexDirection="column" marginTop={1} gap={1}>
+            {rows.map(r => (
+              <Box key={`usage:${r.key}`} flexDirection="row" gap={1} alignItems="center">
+                <Box width={labelWidth + 1}>
+                  <Text>{r.label}</Text>
+                </Box>
+                <Svg source={meterSvg(r.percent)} alt={`${r.label}: ${Math.round(r.percent)}%`} width={METER_PX} height={8} />
+                <Box width={5}>
+                  <Text tabular weight="medium">{`${Math.round(r.percent)}%`}</Text>
+                </Box>
+                <Text dimColor>{r.detail}</Text>
+              </Box>
+            ))}
+            {live.costUsd !== undefined && (
+              <Box key="usage:cost" flexDirection="row" gap={1}>
+                <Box width={labelWidth + 1}>
+                  <Text>Cost</Text>
+                </Box>
+                <Text tabular>${live.costUsd.toFixed(2)}</Text>
+                <Text dimColor>this session</Text>
+                {turn && <Text tabular dimColor>· ${turn.usd.toFixed(2)} last turn, {duration(turn.durationMs)}</Text>}
+              </Box>
+            )}
+          </Box>
+        )
+      }
       return (
         <Box key="usage" flexDirection="column" marginTop={1}>
           {rows.map(r => {
