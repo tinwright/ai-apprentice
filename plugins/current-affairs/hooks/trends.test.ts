@@ -115,10 +115,13 @@ test('the Last week pane shows the trends rows and a building baseline', async (
       requestId: 'current-affairs-timeline',
       props: { title: 'Last week', isFocused: false, bodyColumns: 100, placement: 'dock' } as any,
     })
-    expect(await ui.find({ type: 'Text', text: /PRs merged\s+12\s+↑\s+9\.7/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /Median cycle\s+2\.1d\s+↓\s+3\.4d/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /Rework share\s+18%.*building baseline \(3 active days saved\)/ })).toBeDefined()
-    expect(await ui.find({ type: 'Text', text: /Items \/ day\s+4\.2\s+→/ })).toBeDefined()
+    // The terminal draws each row as one line of text, other surfaces as a row of columns.
+    const rowText = async (key: string, label: RegExp) =>
+      surface === 'terminal' ? (await ui.find({ type: 'Text', text: label }))?.text : (await ui.find({ key: `trend:${key}` }))?.text
+    expect(await rowText('prsMerged', /PRs merged/)).toMatch(/PRs merged\s*12\s*↑\s*9\.7/)
+    expect(await rowText('cycleDays', /Median cycle/)).toMatch(/Median cycle\s*2\.1d\s*↓\s*3\.4d/)
+    expect(await rowText('reworkShare', /Rework share/)).toMatch(/Rework share\s*18%.*building baseline \(3 active days saved\)/)
+    expect(await rowText('ticketsPerDay', /Items \/ day/)).toMatch(/Items \/ day\s*4\.2\s*→/)
     await ui.unmount()
   }
 })

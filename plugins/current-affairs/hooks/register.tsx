@@ -17,9 +17,10 @@ import {
 import { closingIssue, computeTrends, direction, mergeHistory, type History, type MergedPr } from './trends'
 import { pool } from './pool'
 import { isFinished, issueViewArgs, parseIssue, staleRefs, titleOf, type TitleConfig } from './titles'
-import { axis, buildTimeline, dailyBars, dayHours, DAYS, formatHours, laneRuns, pickCellsPerDay } from './timeline'
+import { axis, axisSvg, buildTimeline, dailyBars, dailySvg, dayHours, DAYS, formatHours, hoursSvg, laneRuns, laneSvg, pickCellsPerDay, TIMELINE_PX, EXPLORATION_COLOR } from './timeline'
 import { contextWarning, levelColor, meter, tokens, usageRows } from './usage'
 import { costOf, formatUsd } from './pricing'
+import { summarize } from './summarize'
 
 const PANE = 'current-affairs'
 const TIMELINE = 'current-affairs-timeline'
@@ -41,6 +42,19 @@ const TREND_ROWS: {
   { key: 'ticketsPerDay', label: 'Items / day', isHigherBetter: false, format: n => n.toFixed(1) },
 ]
 const RESCAN_MS = 5 * 60_000
+// The most one $.fs.read takes: 4 MiB.
+const READ_LIMIT = 4 * 1024 * 1024
+const METER_PX = 120
+
+// A rounded meter for surfaces that draw SVG: green, then amber past 70%, red past 90%, as levelColor.
+function meterSvg(percent: number): string {
+  const fill = Math.round((Math.min(100, Math.max(0, percent)) / 100) * METER_PX)
+  const color = percent >= 90 ? '#e5534b' : percent >= 70 ? '#d29922' : '#3fb950'
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${METER_PX}" height="8" viewBox="0 0 ${METER_PX} 8">`
+    + `<rect width="${METER_PX}" height="8" rx="4" fill="#8b949e" fill-opacity="0.25"/>`
+    + (fill > 0 ? `<rect width="${Math.max(8, fill)}" height="8" rx="4" fill="${color}"/>` : '')
+    + '</svg>'
+}
 const PARALLEL = 6
 
 const sessions = atom({ plugin: 'current-affairs', key: 'sessions' } as const, [])
@@ -55,6 +69,7 @@ const lastTurn = atom({ plugin: 'current-affairs', key: 'lastTurn' } as const, n
 const contextWarned = atom({ plugin: 'current-affairs', key: 'contextWarned' } as const, 0)
 const hidden = atom({ plugin: 'current-affairs', key: 'hidden' } as const, {})
 const showHidden = atom({ plugin: 'current-affairs', key: 'showHidden' } as const, false)
+const unreadSessions = atom({ plugin: 'current-affairs', key: 'unreadSessions' } as const, 0)
 
 type Cached = { mtimeMs: number; size: number; summary: Summary }
 
@@ -162,18 +177,30 @@ async function scan($: EngineInterface) {
     const cache = ((await $.store.get('summaries.v5')) ?? {}) as Record<string, Cached>
     const fresh: Record<string, Cached> = {}
     const jq = `${$.plugin.root}/hooks/summarize.jq`
+    // Transcripts up to what one $.fs.read takes are summarized here; longer ones need jq, and are
+    // counted when it's missing so the pane can say so.
+    let unread = 0
     await pool([...files, ...subagentFiles], PARALLEL, async file => {
       const hit = cache[file.path]
       if (hit && hit.mtimeMs === file.mtimeMs && hit.size === file.size) {
         fresh[file.path] = hit
         return
       }
-      const run = await $.process.run(['jq', '-Rnc', '-f', jq, file.path], { timeoutMs: 60_000 })
-      if (run.exitCode !== 0) return
+      if (file.size <= READ_LIMIT) {
+        const text = await $.fs.read(file.path).catch(() => undefined)
+        if (text !== undefined) fresh[file.path] = { mtimeMs: file.mtimeMs, size: file.size, summary: summarize(text) }
+        return
+      }
+      const run = await $.process.run(['jq', '-Rnc', '-f', jq, file.path], { timeoutMs: 60_000 }).catch(() => undefined)
+      if (!run || run.exitCode !== 0) {
+        if (!('parent' in file)) unread += 1
+        return
+      }
       try {
         fresh[file.path] = { mtimeMs: file.mtimeMs, size: file.size, summary: JSON.parse(run.stdout) }
       } catch {}
     })
+    await $.state.set({ plugin: 'current-affairs', key: 'unreadSessions' }, unread)
     await $.store.set('summaries.v5', fresh)
     void $.store.delete('summaries.v4')
 
@@ -307,7 +334,10 @@ export const register: Register = (on, options) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Box, Text, Button } = $.ui.resolve(e)
+    const elements = $.ui.resolve(e)
+    const { Box, Text, Button } = elements
+    // Svg is on every surface but the terminal, where resolve hands back a stand-in that draws nothing.
+    const Svg = e.surface !== 'terminal' && 'Svg' in elements ? elements.Svg : undefined
     const scanned = await read($, sessions)
     const turn = await read($, lastTurn)
     const flipped = await read($, toggled)
@@ -317,6 +347,7 @@ export const register: Register = (on, options) => {
     const live = await read($, usage)
     const putAway = await read($, hidden)
     const isShowingHidden = await read($, showHidden)
+    const unread = await read($, unreadSessions)
     const nowMs = await $.clock.now()
     const list = scanned.filter(s => s.lastMs >= nowMs - WINDOW_DAYS * 86_400_000)
     const width = Math.max(30, e.props.bodyColumns ?? e.viewport?.columns ?? 80)
@@ -462,6 +493,36 @@ export const register: Register = (on, options) => {
       const duration = (ms: number) => (ms < 60_000 ? `${Math.round(ms / 1000)}s` : `${Math.floor(ms / 60_000)}m ${Math.round((ms % 60_000) / 1000)}s`)
       const labelWidth = Math.max(4, ...rows.map(r => r.label.length)) + 1
       const barWidth = Math.max(8, Math.min(24, width - labelWidth - 28))
+      // Block characters only line up in a monospaced terminal; elsewhere each meter is a drawn bar
+      // and the label sits in a fixed-width column.
+      if (Svg) {
+        return (
+          <Box key="usage" flexDirection="column" marginTop={1} gap={1}>
+            {rows.map(r => (
+              <Box key={`usage:${r.key}`} flexDirection="row" gap={1} alignItems="center">
+                <Box width={labelWidth + 1}>
+                  <Text>{r.label}</Text>
+                </Box>
+                <Svg source={meterSvg(r.percent)} alt={`${r.label}: ${Math.round(r.percent)}%`} width={METER_PX} height={8} />
+                <Box width={5}>
+                  <Text>{`${Math.round(r.percent)}%`}</Text>
+                </Box>
+                <Text dimColor>{r.detail}</Text>
+              </Box>
+            ))}
+            {live.costUsd !== undefined && (
+              <Box key="usage:cost" flexDirection="row" gap={1}>
+                <Box width={labelWidth + 1}>
+                  <Text>Cost</Text>
+                </Box>
+                <Text>${live.costUsd.toFixed(2)}</Text>
+                <Text dimColor>this session</Text>
+                {turn && <Text dimColor>· ${turn.usd.toFixed(2)} last turn, {duration(turn.durationMs)}</Text>}
+              </Box>
+            )}
+          </Box>
+        )
+      }
       return (
         <Box key="usage" flexDirection="column" marginTop={1}>
           {rows.map(r => {
@@ -514,6 +575,11 @@ export const register: Register = (on, options) => {
         </Box>
         {usageBlock()}
         {list.length === 0 && !isScanning && <Text dimColor>No sessions found.</Text>}
+        {unread > 0 && (
+          <Text dimColor>
+            {unread} long {unread === 1 ? 'session needs' : 'sessions need'} jq to show here.
+          </Text>
+        )}
         {sections.map(section => {
           const isExpanded = isOpen(section.key)
           const isFlat = section.isFlat
@@ -542,7 +608,9 @@ export const register: Register = (on, options) => {
   })
 
   on('ui.render', { component: 'Pane', requestId: TIMELINE }, async ($, e) => {
-    const { Box, Text } = $.ui.resolve(e)
+    const elements = $.ui.resolve(e)
+    const { Box, Text } = elements
+    const Svg = e.surface !== 'terminal' && 'Svg' in elements ? elements.Svg : undefined
     const list = await read($, sessions)
     const issues = await read($, titles)
     const tz = await read($, tzOffset)
@@ -553,7 +621,8 @@ export const register: Register = (on, options) => {
     const fit = (text: string, room: number) =>
       (text.length <= room ? text : `${text.slice(0, Math.max(1, room - 1))}…`).padEnd(room)
 
-    const cellsPerDay = pickCellsPerDay(width - labelWidth - 1)
+    // Drawn as SVG, a day has room for 3-hour cells whatever the pane's width.
+    const cellsPerDay = Svg ? 8 : pickCellsPerDay(width - labelWidth - 1)
     const t = buildTimeline(list, issues, nowMs, tz, cellsPerDay)
     const max = Math.max(1, ...t.lanes.flatMap(lane => lane.cells))
     const room = Math.max(3, (e.viewport?.rows ?? 40) - (trend ? 16 : 10))
@@ -561,6 +630,80 @@ export const register: Register = (on, options) => {
     const lanes = t.lanes.filter(lane => shown.includes(lane))
     const gutter = ' '.repeat(labelWidth + 1)
     const hoursRow = dayHours(t.hoursByDay, cellsPerDay)
+
+    const trendArrow = (row: (typeof TREND_ROWS)[number]) => {
+      const m = trend![row.key]
+      const way = direction(m, row.isHigherBetter)
+      const arrow = way === undefined ? ' ' : way === 'same' ? '→' : (m.current ?? 0) > (m.baseline ?? 0) ? '↑' : '↓'
+      const color = way === 'better' ? 'green' : way === 'worse' ? 'yellow' : undefined
+      return { m, way, arrow, color }
+    }
+
+    // Outside the terminal, the lanes are drawn bars beside a fixed-width label column, and the
+    // trends a table of fixed-width columns, since text in a proportional face doesn't line up.
+    if (Svg) {
+      const svgLabelWidth = Math.min(24, Math.max(12, width - Math.round(TIMELINE_PX / 7) - 2))
+      const row = (key: string, name: string | undefined, color: string | undefined, isDim: boolean, chart: string, alt: string) => (
+        <Box key={key} flexDirection="row" gap={1} alignItems="center">
+          <Box width={svgLabelWidth}>
+            {name !== undefined && (
+              <Text color={color} dimColor={isDim} wrap="truncate-end">
+                {name}
+              </Text>
+            )}
+          </Box>
+          <Svg source={chart} alt={alt} width={TIMELINE_PX} />
+        </Box>
+      )
+      return (
+        <Box flexDirection="column" gap={1}>
+          <Text dimColor>
+            {formatHours(t.hours)} worked · {t.sessionCount} sessions · {t.activeDays}/{DAYS} active days · {t.prCount} PRs
+            {t.busiestDay ? ` · busiest ${t.busiestDay}` : ''}
+          </Text>
+          <Box flexDirection="column" gap={1}>
+            {row('axis', undefined, undefined, false, axisSvg(t.dayLabels, t.todayIndex), t.dayLabels.join(', '))}
+            {lanes.map(lane => row(`lane:${lane.key}`, lane.label, lane.color, false, laneSvg(lane.cells, cellsPerDay, max, lane.color), `${lane.label}: activity by day`))}
+            {lanes.length < t.lanes.length && (
+              <Text dimColor>+{t.lanes.length - lanes.length} quieter lanes</Text>
+            )}
+            {row('all', 'all work', undefined, true, dailySvg(t.daily, '#48c1c4'), 'All work by day')}
+            {t.hours > 0 &&
+              row('hours', 'hours worked', undefined, true, hoursSvg(t.hoursByDay),
+                `Hours worked: ${t.dayLabels.map((day, i) => `${day} ${formatHours(t.hoursByDay[i] ?? 0)}`).join(', ')}`)}
+          </Box>
+          <Box flexDirection="row" flexWrap="wrap" columnGap={2}>
+            {[...t.repos, { name: 'exploration', color: EXPLORATION_COLOR }].map(repo => (
+              <Text key={`key:${repo.name}`}>
+                <Text color={repo.color}>●</Text> {repo.name}
+              </Text>
+            ))}
+          </Box>
+          {trend && (
+            <Box flexDirection="column">
+              <Box flexDirection="row">
+                <Box width={16}><Text bold>Trends</Text></Box>
+                <Box width={12}><Text dimColor>last 2 wks</Text></Box>
+                <Text dimColor>prior 6 wks, per 2 wks</Text>
+              </Box>
+              {TREND_ROWS.map(r => {
+                const { m, way, arrow, color } = trendArrow(r)
+                return (
+                  <Box key={`trend:${r.key}`} flexDirection="row">
+                    <Box width={16}><Text>{r.label}</Text></Box>
+                    <Box width={8}><Text>{m.current === undefined ? '—' : r.format(m.current)}</Text></Box>
+                    <Box width={4}><Text color={color} dimColor={way === 'same'}>{arrow}</Text></Box>
+                    <Text dimColor>
+                      {m.baseline !== undefined ? r.format(m.baseline) : `building baseline (${m.baselineDays} active days saved)`}
+                    </Text>
+                  </Box>
+                )
+              })}
+            </Box>
+          )}
+        </Box>
+      )
+    }
 
     return (
       <Box flexDirection="column">
@@ -612,11 +755,7 @@ export const register: Register = (on, options) => {
               {'last 2 wks'.padEnd(13)}prior 6 wks, per 2 wks
             </Text>
             {TREND_ROWS.map(row => {
-              const m = trend[row.key]
-              const way = direction(m, row.isHigherBetter)
-              const arrow =
-                way === undefined ? ' ' : way === 'same' ? '→' : (m.current ?? 0) > (m.baseline ?? 0) ? '↑' : '↓'
-              const color = way === 'better' ? 'green' : way === 'worse' ? 'yellow' : undefined
+              const { m, way, arrow, color } = trendArrow(row)
               return (
                 <Text>
                   {fit(row.label, 16)}

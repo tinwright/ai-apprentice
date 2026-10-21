@@ -33,7 +33,8 @@ Il lit uniquement vos transcriptions locales (`~/.claude/projects`), git, et Git
 
 ## Prérequis
 
-- `jq` et `git` dans votre `PATH`.
+- `git` dans votre `PATH`.
+- `jq` dans votre `PATH` pour les sessions dont la transcription dépasse 4 Mo. Sans lui, ces sessions sont omises et le volet indique combien.
 - `gh`, connecté, pour les titres des tickets et les tendances des pull requests. Le statut GitHub Projects demande aussi la portée `read:project` (`gh auth refresh -s read:project`). Sans elle, les lignes affichent le titre seul, ou `closed` une fois le ticket fermé.
 
 ## Développement

@@ -198,3 +198,71 @@ export function dailyBars(daily: number[], cellsPerDay: number) {
     })
     .join('')
 }
+
+// The same views drawn as SVG, for surfaces that have it (everywhere but the terminal): one column
+// per day, DAY_PX wide with a gap, so every row lines up under the axis. Text inside an SVG can't
+// follow the theme, so it's a grey that reads on light and dark alike.
+const DAY_PX = 36
+const DAY_GAP = 4
+const LANE_PX = 12
+const MUTED = '#8b949e'
+export const TIMELINE_PX = DAYS * DAY_PX
+const svg = (height: number, body: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${TIMELINE_PX}" height="${height}" viewBox="0 0 ${TIMELINE_PX} ${height}">${body}</svg>`
+const dayCenter = (day: number) => day * DAY_PX + (DAY_PX - DAY_GAP) / 2
+const label = (text: string) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+
+/** A lane as a strip of days, each a faint track with its active cells shaded by level. */
+export function laneSvg(cells: number[], cellsPerDay: number, max: number, color: string): string {
+  const cellPx = (DAY_PX - DAY_GAP) / cellsPerDay
+  let body = ''
+  for (let day = 0; day < DAYS; day++)
+    body += `<rect x="${day * DAY_PX}" width="${DAY_PX - DAY_GAP}" height="${LANE_PX}" rx="2" fill="${MUTED}" fill-opacity="0.15"/>`
+  cells.forEach((value, i) => {
+    if (value <= 0) return
+    const level = Math.log1p(value) / Math.log1p(Math.max(1, max))
+    const x = Math.floor(i / cellsPerDay) * DAY_PX + (i % cellsPerDay) * cellPx
+    body += `<rect x="${x.toFixed(2)}" width="${cellPx.toFixed(2)}" height="${LANE_PX}" fill="${color}" fill-opacity="${(0.35 + 0.65 * level).toFixed(2)}"/>`
+  })
+  return svg(LANE_PX, body)
+}
+
+/** The day labels, one centred over each column, today's in bold. */
+export function axisSvg(labels: string[], todayIndex: number): string {
+  return svg(
+    14,
+    labels
+      .map((text, day) =>
+        `<text x="${dayCenter(day)}" y="11" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="${MUTED}"${day === todayIndex ? ' font-weight="600"' : ''}>${label(text)}</text>`,
+      )
+      .join(''),
+  )
+}
+
+/** Each day's activity as a bar, tallest for the busiest day. */
+export function dailySvg(daily: number[], color: string): string {
+  const height = 20
+  const max = Math.max(1, ...daily)
+  return svg(
+    height,
+    daily
+      .map((n, day) => {
+        if (n <= 0) return ''
+        const h = Math.max(2, Math.round((n / max) * height))
+        return `<rect x="${day * DAY_PX}" y="${height - h}" width="${DAY_PX - DAY_GAP}" height="${h}" rx="2" fill="${color}"/>`
+      })
+      .join(''),
+  )
+}
+
+/** Each day's hours worked, centred under its column. */
+export function hoursSvg(hoursByDay: number[]): string {
+  return svg(
+    14,
+    hoursByDay
+      .map((h, day) =>
+        h === 0 ? '' : `<text x="${dayCenter(day)}" y="11" text-anchor="middle" font-family="system-ui, sans-serif" font-size="10" fill="${MUTED}">${formatHours(h)}</text>`,
+      )
+      .join(''),
+  )
+}
