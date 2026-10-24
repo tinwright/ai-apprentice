@@ -14,10 +14,10 @@ import {
   toSession,
   type Summary,
 } from './classify'
-import { closingIssue, computeTrends, direction, mergeHistory, type History, type MergedPr } from './trends'
+import { closingIssue, computeTrends, direction, MIN_BASELINE_DAYS, mergeHistory, type History, type MergedPr } from './trends'
 import { pool } from './pool'
 import { isFinished, issueViewArgs, parseIssue, staleRefs, titleOf, type TitleConfig } from './titles'
-import { axis, axisSvg, buildTimeline, dailyBars, dailySvg, dayHours, DAYS, formatHours, hoursSvg, laneRuns, laneSvg, pickCellsPerDay, TIMELINE_PX, EXPLORATION_COLOR } from './timeline'
+import { axis, axisSvg, buildTimeline, dailyBars, dailySvg, dayHours, DAYS, formatHours, hoursSvg, laneRuns, laneSvg, pickCellsPerDay, recentTotals, TIMELINE_PX, EXPLORATION_COLOR, type Totals } from './timeline'
 import { contextWarning, levelColor, meter, tokens, usageRows } from './usage'
 import { costOf, formatUsd } from './pricing'
 import { summarize } from './summarize'
@@ -348,6 +348,7 @@ export const register: Register = (on, options) => {
     const putAway = await read($, hidden)
     const isShowingHidden = await read($, showHidden)
     const unread = await read($, unreadSessions)
+    const tz = await read($, tzOffset)
     const nowMs = await $.clock.now()
     const list = scanned.filter(s => s.lastMs >= nowMs - WINDOW_DAYS * 86_400_000)
     const width = Math.max(30, e.props.bodyColumns ?? e.viewport?.columns ?? 80)
@@ -485,7 +486,44 @@ export const register: Register = (on, options) => {
       )
     }
 
-    // This session's context and the account's limits, one meter each, then what the session has cost.
+    // Outside the terminal the app lists sessions itself, so the pane keeps to the figures; there,
+    // limits drop the word "limit", which a narrow pane has no room for.
+    const isTerminal = e.surface === 'terminal'
+    const shortLabel = (label: string) => (isTerminal ? label : label.replace(/ limit$/, ''))
+    const LABEL = isTerminal ? 13 : 12
+    // A label in a fixed column, then the rest. Nothing here wraps; a narrow pane cuts the end.
+    const labelled = (key: string, label: string, ...rest: RenderNode[]) => (
+      <Box key={key} flexDirection="row" gap={1} alignItems="center">
+        <Box width={LABEL} flexShrink={0}>
+          <Text wrap="truncate-end">{label}</Text>
+        </Box>
+        {rest}
+      </Box>
+    )
+
+    // Hours worked, sessions and cost, today and over the last 7 days, as the timeline counts them.
+    const totalsBlock = () => {
+      if (list.length === 0) return undefined
+      const { today, week } = recentTotals(list, nowMs, tz)
+      const figures = (t: Totals, ofWeek: boolean) =>
+        [
+          formatHours(t.hours),
+          t.usd ? formatUsd(t.usd) : undefined,
+          `${t.sessions} ${t.sessions === 1 ? 'session' : 'sessions'}`,
+          ofWeek ? `${t.activeDays}/${DAYS} days` : undefined,
+        ]
+          .filter(Boolean)
+          .join(' · ')
+      return (
+        <Box key="totals" flexDirection="column" marginTop={1}>
+          {labelled('totals:today', 'Today', <Text wrap="truncate-end">{today.sessions ? figures(today, false) : 'nothing yet'}</Text>)}
+          {labelled('totals:week', 'Last 7 days', <Text wrap="truncate-end">{figures(week, true)}</Text>)}
+        </Box>
+      )
+    }
+
+    // This session's context and the account's limits, one meter each with where a limit is
+    // heading, then what the session has cost.
     const usageBlock = () => {
       if (!live) return undefined
       const rows = usageRows(live, nowMs)
@@ -499,25 +537,31 @@ export const register: Register = (on, options) => {
         return (
           <Box key="usage" flexDirection="column" marginTop={1} gap={1}>
             {rows.map(r => (
-              <Box key={`usage:${r.key}`} flexDirection="row" gap={1} alignItems="center">
-                <Box width={labelWidth + 1}>
-                  <Text>{r.label}</Text>
-                </Box>
-                <Svg source={meterSvg(r.percent)} alt={`${r.label}: ${Math.round(r.percent)}%`} width={METER_PX} height={8} />
-                <Box width={5}>
-                  <Text>{`${Math.round(r.percent)}%`}</Text>
-                </Box>
-                <Text dimColor>{r.detail}</Text>
+              <Box key={`usage:${r.key}`} flexDirection="column">
+                {labelled(
+                  `usage:${r.key}:meter`,
+                  shortLabel(r.label),
+                  <Box flexShrink={0}>
+                    <Svg source={meterSvg(r.percent)} alt={`${r.label}: ${Math.round(r.percent)}%`} width={METER_PX} height={8} />
+                  </Box>,
+                  <Box width={5} flexShrink={0}>
+                    <Text>{`${Math.round(r.percent)}%`}</Text>
+                  </Box>,
+                  <Text dimColor wrap="truncate-end">{r.detail}</Text>,
+                )}
+                {r.pace && labelled(`usage:${r.key}:pace`, '', <Text color={r.paceColor} dimColor={r.paceColor === 'green'} wrap="truncate-end">{r.pace}</Text>)}
               </Box>
             ))}
             {live.costUsd !== undefined && (
-              <Box key="usage:cost" flexDirection="row" gap={1}>
-                <Box width={labelWidth + 1}>
-                  <Text>Cost</Text>
-                </Box>
-                <Text>${live.costUsd.toFixed(2)}</Text>
-                <Text dimColor>this session</Text>
-                {turn && <Text dimColor>· ${turn.usd.toFixed(2)} last turn, {duration(turn.durationMs)}</Text>}
+              <Box key="usage:cost" flexDirection="column">
+                {labelled('usage:cost:session', 'Cost', <Text>${live.costUsd.toFixed(2)}</Text>, <Text dimColor wrap="truncate-end">this session</Text>)}
+                {turn &&
+                  labelled(
+                    'usage:cost:turn',
+                    '',
+                    <Text>${turn.usd.toFixed(2)}</Text>,
+                    <Text dimColor wrap="truncate-end">last turn, {duration(turn.durationMs)}</Text>,
+                  )}
               </Box>
             )}
           </Box>
@@ -527,7 +571,7 @@ export const register: Register = (on, options) => {
         <Box key="usage" flexDirection="column" marginTop={1}>
           {rows.map(r => {
             const bar = meter(r.percent, barWidth)
-            return (
+            return [
               <Box key={`usage:${r.key}`} flexDirection="row" gap={1}>
                 <Text>{r.label.padEnd(labelWidth)}</Text>
                 <Text>
@@ -536,8 +580,14 @@ export const register: Register = (on, options) => {
                 </Text>
                 <Text>{`${Math.round(r.percent)}%`.padStart(4)}</Text>
                 <Text dimColor>{r.detail}</Text>
-              </Box>
-            )
+              </Box>,
+              r.pace && (
+                <Text key={`usage:${r.key}:pace`}>
+                  {' '.repeat(labelWidth + 1)}
+                  <Text color={r.paceColor} dimColor={r.paceColor === 'green'}>{r.pace}</Text>
+                </Text>
+              ),
+            ]
           })}
           {live.costUsd !== undefined && (
             <Box key="usage:cost" flexDirection="row" gap={1}>
@@ -555,12 +605,12 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column">
         <Box flexDirection="row" justifyContent="space-between" gap={1}>
-          <Text dimColor>
-            {list.length} sessions · {WINDOW_DAYS}d
-            {isScanning ? ' · scanning…' : lastScan ? ` · ${ago(lastScan, nowMs)} ago` : ''}
+          <Text dimColor wrap="truncate-end">
+            {isTerminal ? `${list.length} sessions · ${WINDOW_DAYS}d` : isScanning ? '' : 'updated'}
+            {isScanning ? `${isTerminal ? ' · ' : ''}scanning…` : lastScan ? `${isTerminal ? ' ·' : ''} ${ago(lastScan, nowMs)} ago` : ''}
           </Text>
-          <Box flexDirection="row" gap={2}>
-            {hiddenCount > 0 && (
+          <Box flexDirection="row" gap={2} flexShrink={0}>
+            {isTerminal && hiddenCount > 0 && (
               <Button
                 key="show-hidden"
                 label={isShowingHidden ? 'hide finished' : `${hiddenCount} hidden`}
@@ -574,13 +624,14 @@ export const register: Register = (on, options) => {
           </Box>
         </Box>
         {usageBlock()}
+        {totalsBlock()}
         {list.length === 0 && !isScanning && <Text dimColor>No sessions found.</Text>}
         {unread > 0 && (
           <Text dimColor>
             {unread} long {unread === 1 ? 'session needs' : 'sessions need'} jq to show here.
           </Text>
         )}
-        {sections.map(section => {
+        {isTerminal && sections.map(section => {
           const isExpanded = isOpen(section.key)
           const isFlat = section.isFlat
           if (!isFlat && section.tickets.length === 0 && section.loose.length === 0) return undefined
@@ -682,19 +733,19 @@ export const register: Register = (on, options) => {
           {trend && (
             <Box flexDirection="column">
               <Box flexDirection="row">
-                <Box width={16}><Text bold>Trends</Text></Box>
-                <Box width={12}><Text dimColor>last 2 wks</Text></Box>
-                <Text dimColor>prior 6 wks, per 2 wks</Text>
+                <Box width={14} flexShrink={0}><Text bold>Trends</Text></Box>
+                <Box width={10} flexShrink={0}><Text dimColor>2 wks</Text></Box>
+                <Text dimColor wrap="truncate-end">prior 6 wks</Text>
               </Box>
               {TREND_ROWS.map(r => {
                 const { m, way, arrow, color } = trendArrow(r)
                 return (
                   <Box key={`trend:${r.key}`} flexDirection="row">
-                    <Box width={16}><Text>{r.label}</Text></Box>
-                    <Box width={8}><Text>{m.current === undefined ? '—' : r.format(m.current)}</Text></Box>
-                    <Box width={4}><Text color={color} dimColor={way === 'same'}>{arrow}</Text></Box>
-                    <Text dimColor>
-                      {m.baseline !== undefined ? r.format(m.baseline) : `building baseline (${m.baselineDays} active days saved)`}
+                    <Box width={14} flexShrink={0}><Text wrap="truncate-end">{r.label}</Text></Box>
+                    <Box width={7} flexShrink={0}><Text>{m.current === undefined ? '—' : r.format(m.current)}</Text></Box>
+                    <Box width={3} flexShrink={0}><Text color={color} dimColor={way === 'same'}>{arrow}</Text></Box>
+                    <Text dimColor wrap="truncate-end">
+                      {m.baseline !== undefined ? r.format(m.baseline) : `building, ${Math.min(m.baselineDays, MIN_BASELINE_DAYS)}/${MIN_BASELINE_DAYS} days`}
                     </Text>
                   </Box>
                 )

@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { contextWarning, limitLabel, meter, resetsIn, tokens, usageRows } from './usage'
+import { contextWarning, limitLabel, limitPace, meter, paceText, resetsIn, tokens, usageRows } from './usage'
 
 test('meters fill in eighths and always keep their width', async () => {
   expect(meter(0, 8)).toEqual({ filled: '', empty: '░░░░░░░░' })
@@ -59,4 +59,24 @@ test('the context warning comes once per mark, and resets when the context drops
   expect(contextWarning(92, 95, 0)).toEqual({ level: 0 })
   expect(contextWarning(96, 95, 0).level).toBe(95)
   expect(contextWarning(99, 0, 0)).toEqual({ level: 0 })
+})
+
+test('a limit\'s pace is where it ends up by its reset at the rate so far', () => {
+  const now = Date.parse('2026-10-24T12:00:00Z')
+  const hours = (n: number) => new Date(now + n * 3_600_000).toISOString()
+  // Two days into the week at 3%: about 10% by the reset.
+  const week = limitPace({ kind: 'seven_day', percentUsed: 3, resetsAt: hours(5 * 24) }, now)
+  expect(Math.round(week?.percent ?? 0)).toBe(11)
+  expect(paceText(week)).toBe('on pace for 11% by reset')
+  // An hour into the 5-hour window at 40%: out an hour and a half from now.
+  const fast = limitPace({ kind: 'five_hour', percentUsed: 40, resetsAt: hours(4) }, now)
+  expect(fast?.runsOutInMs).toBe(1.5 * 3_600_000)
+  expect(paceText(fast)).toBe('at this pace, out in 2h')
+  // Too early in the window, an unknown window, nothing used yet: no pace.
+  expect(limitPace({ kind: 'seven_day', percentUsed: 1, resetsAt: hours(7 * 24 - 1) }, now)).toBeUndefined()
+  expect(limitPace({ kind: 'spend_limit', percentUsed: 50, resetsAt: hours(2) }, now)).toBeUndefined()
+  expect(limitPace({ kind: 'five_hour', percentUsed: 0, resetsAt: hours(2) }, now)).toBeUndefined()
+  expect(usageRows({ context: { window: 1 }, rateLimits: [{ kind: 'seven_day', percentUsed: 3, resetsAt: hours(5 * 24) }] }, now)[0].pace).toBe(
+    'on pace for 11% by reset',
+  )
 })
