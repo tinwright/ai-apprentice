@@ -45,7 +45,43 @@ export function resetsIn(iso: string | undefined, nowMs: number): string | undef
 /** green, then yellow past 70%, red past 90%, so a filling window stands out. */
 export const levelColor = (percent: number) => (percent >= 90 ? 'red' : percent >= 70 ? 'yellow' : 'green')
 
-export type UsageRow = { key: string; label: string; percent: number; detail: string }
+const WINDOW_MS: Record<string, number> = { five_hour: 5 * 3_600_000, seven_day: 7 * 86_400_000 }
+
+/** A span to read at a glance: 40m, 3h, 2d. */
+const span = (ms: number) => {
+  const minutes = Math.max(1, Math.round(ms / 60_000))
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.round(minutes / 60)
+  return hours < 48 ? `${hours}h` : `${Math.round(hours / 24)}d`
+}
+
+/**
+ * Where a limit window is heading at the rate it has filled so far: the percent it reaches by its
+ * reset, or how soon it runs out if that comes first. Undefined for a window of unknown length, or
+ * one less than a tenth through, while the rate says little.
+ */
+export function limitPace(
+  limit: LiveUsage['rateLimits'][number],
+  nowMs: number,
+): { percent: number; runsOutInMs?: number } | undefined {
+  const length = WINDOW_MS[limit.kind]
+  const at = limit.resetsAt ? Date.parse(limit.resetsAt) : NaN
+  if (!length || Number.isNaN(at) || at <= nowMs || limit.percentUsed <= 0) return undefined
+  const elapsed = length - (at - nowMs)
+  if (elapsed < length / 10) return undefined
+  const percent = (limit.percentUsed / elapsed) * length
+  if (percent < 100) return { percent }
+  return { percent, runsOutInMs: Math.max(0, ((100 - limit.percentUsed) / limit.percentUsed) * elapsed) }
+}
+
+/** A pace as a line under its meter: `on pace for 18% by reset`, or `at this pace, out in 3h`. */
+export function paceText(pace: ReturnType<typeof limitPace>): string | undefined {
+  if (!pace) return undefined
+  if (pace.runsOutInMs !== undefined) return `at this pace, out in ${span(pace.runsOutInMs)}`
+  return `on pace for ${Math.round(pace.percent)}% by reset`
+}
+
+export type UsageRow = { key: string; label: string; percent: number; detail: string; pace?: string; paceColor?: string }
 
 /** The rows the usage block draws: context first, then each rate-limit window. */
 export function usageRows(usage: LiveUsage, nowMs: number): UsageRow[] {
@@ -62,11 +98,14 @@ export function usageRows(usage: LiveUsage, nowMs: number): UsageRow[] {
   }
   for (const limit of usage.rateLimits) {
     const reset = resetsIn(limit.resetsAt, nowMs)
+    const pace = limitPace(limit, nowMs)
     rows.push({
       key: limit.kind,
       label: limitLabel(limit.kind),
       percent: limit.percentUsed,
       detail: reset ? `resets ${reset}` : '',
+      pace: paceText(pace),
+      paceColor: pace ? levelColor(pace.percent) : undefined,
     })
   }
   return rows

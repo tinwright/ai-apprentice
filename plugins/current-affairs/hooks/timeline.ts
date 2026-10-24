@@ -69,6 +69,45 @@ export function hoursWorked(sessions: WorkSession[], firstDay: number, tzOffsetM
   return minutes.map(m => m / 60)
 }
 
+export type Totals = { hours: number; usd: number; sessions: number; activeDays: number }
+
+/**
+ * Today's work and the last 7 days': hours worked as the timeline counts them, sessions active, and
+ * cost. A session's cost is split across the days it was active in, by its activity on each.
+ */
+export function recentTotals(sessions: WorkSession[], nowMs: number, tzOffsetMin: number): { today: Totals; week: Totals } {
+  const today = localDay(nowMs, tzOffsetMin)
+  const firstDay = today - DAYS + 1
+  const usdByDay = new Array<number>(DAYS).fill(0)
+  const sessionsByDay = Array.from({ length: DAYS }, () => new Set<string>())
+  for (const session of sessions) {
+    const entries = Object.entries(session.activity)
+    const records = entries.reduce((sum, [, n]) => sum + n, 0)
+    for (const [hour, count] of entries) {
+      const day = localDay(Date.parse(`${hour}:00:00Z`), tzOffsetMin) - firstDay
+      if (!(day >= 0 && day < DAYS)) continue
+      sessionsByDay[day].add(session.id)
+      if (session.costUsd && records) usdByDay[day] += (session.costUsd * count) / records
+    }
+  }
+  const hoursByDay = hoursWorked(sessions, firstDay, tzOffsetMin)
+  const sum = (values: number[]) => values.reduce((a, b) => a + b, 0)
+  return {
+    today: {
+      hours: hoursByDay[DAYS - 1],
+      usd: usdByDay[DAYS - 1],
+      sessions: sessionsByDay[DAYS - 1].size,
+      activeDays: sessionsByDay[DAYS - 1].size ? 1 : 0,
+    },
+    week: {
+      hours: sum(hoursByDay),
+      usd: sum(usdByDay),
+      sessions: new Set(sessionsByDay.flatMap(ids => [...ids])).size,
+      activeDays: sessionsByDay.filter(ids => ids.size > 0).length,
+    },
+  }
+}
+
 /** Hours to read at a glance: 0.5h, 7.3h, 23h. */
 export const formatHours = (hours: number) => `${hours < 10 ? hours.toFixed(1).replace(/\.0$/, '') : Math.round(hours)}h`
 
