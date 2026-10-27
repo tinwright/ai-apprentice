@@ -4,7 +4,7 @@ const DAY_MS = 86_400_000
 const CURRENT_DAYS = 14
 const BASELINE_DAYS = 42
 // Fewer active days than this in the baseline and it is not shown.
-const MIN_BASELINE_DAYS = 5
+export const MIN_BASELINE_DAYS = 5
 // GitHub's closing keywords in a PR description: "Closes #12", "fixes: #12".
 const CLOSES = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+#(\d+)\b/i
 

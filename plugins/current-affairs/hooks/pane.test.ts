@@ -23,7 +23,7 @@ test('repos hold their issues, branches and loose sessions; Exploration starts c
   on('state.get', { plugin: 'current-affairs', key: 'sessions' }, async () => ({ value: { value: SESSIONS, version: 1 } }))
   on('state.get', { plugin: 'current-affairs', key: 'titles' }, async () => ({ value: { value: TITLES, version: 1 } }))
   mock.clock(on)
-  for (const surface of ['terminal', 'desktop'] as const) {
+  for (const surface of ['terminal'] as const) {
     const ui = await $.ui.mount({ plugin: 'current-affairs', surface, ...PANE })
     expect((await ui.find({ key: 'row:repo:repo-a' }))?.text).toContain('repo-a')
 
@@ -73,16 +73,45 @@ test('the pane leads with this session\'s context and the account\'s limits', as
     expect(context).toContain('84k / 200k')
     expect(context).not.toContain('$')
     expect((await ui.find({ key: 'usage:cost' }))?.text).toContain('$1.25')
-    expect((await ui.find({ key: 'usage:five_hour' }))?.text).toContain('5-hour limit')
+    // A narrow app pane has room for "5-hour" alone.
+    expect((await ui.find({ key: 'usage:five_hour' }))?.text).toContain(surface === 'terminal' ? '5-hour limit' : '5-hour')
     expect((await ui.find({ key: 'usage:seven_day' }))?.text).toContain('91%')
     // The terminal draws each meter in block characters, every other surface as a drawn bar.
     const meter = JSON.stringify((await ui.find({ key: 'usage:context' }))?.children)
     if (surface === 'terminal') expect(meter).toContain('█')
     else expect(meter).toContain('<svg')
-    // Each past session says how full its context was when it stopped.
-    expect((await ui.find({ key: 'row:s1' }))?.text).toContain('84k ctx')
+    // Each past session says how full its context was when it stopped, in the terminal's list.
+    if (surface === 'terminal') expect((await ui.find({ key: 'row:s1' }))?.text).toContain('84k ctx')
     await ui.unmount()
   }
+})
+
+test('outside the terminal the pane keeps to the figures, today\'s and the last 7 days\'', async ($, on) => {
+  // Saturday 24 Oct 2026, 12:00 UTC; tzOffsetMin stays 0.
+  const now = Date.parse('2026-10-24T12:00:00Z')
+  const today = { ...SESSIONS[0], id: 't1', lastMs: now, costUsd: 3, activity: { '2026-10-24T09': 2, '2026-10-20T09': 1 }, slots: ['2026-10-24T09:00', '2026-10-24T09:05'] }
+  const earlier = { ...SESSIONS[1], id: 't2', lastMs: now - 3 * 86_400_000, costUsd: 1, activity: { '2026-10-21T09': 4 }, slots: ['2026-10-21T09:00'] }
+  on('state.get', { plugin: 'current-affairs', key: 'sessions' }, async () => ({ value: { value: [today, earlier], version: 1 } }))
+  on('state.get', { plugin: 'current-affairs', key: 'usage' }, async () => ({ value: { value: USAGE, version: 1 } }))
+  mock.clock(on, { now })
+  const ui = await $.ui.mount({ plugin: 'current-affairs', surface: 'desktop', ...PANE })
+  expect(await ui.find({ key: 'row:repo:repo-a' })).toBeUndefined()
+  expect(await ui.find({ key: 'usage:context' })).toBeDefined()
+  // Two-thirds of t1's records are today: $2 of its $3.
+  const day = (await ui.find({ key: 'totals:today' }))?.text
+  expect(day).toContain('$2.00')
+  expect(day).toContain('1 session')
+  const week = (await ui.find({ key: 'totals:week' }))?.text
+  expect(week).toContain('$4.00')
+  expect(week).toContain('2 sessions')
+  expect(week).toContain('3/7 days')
+  await ui.unmount()
+
+  // The terminal keeps its list as well.
+  const terminal = await $.ui.mount({ plugin: 'current-affairs', surface: 'terminal', ...PANE })
+  expect(await terminal.find({ key: 'row:repo:repo-a' })).toBeDefined()
+  expect(await terminal.find({ key: 'totals:week' })).toBeDefined()
+  await terminal.unmount()
 })
 
 test('with no reading yet, the pane draws no usage block', async ($, on) => {
@@ -127,7 +156,7 @@ test('work can be put away until it moves again, and finished issues go by thems
   on('store.get', async (_, e) => ({ value: store.get(e.key) }))
   on('store.set', async (_, e) => (store.set(e.key, e.value), { value: undefined }))
   mock.clock(on)
-  for (const surface of ['terminal', 'desktop'] as const) {
+  for (const surface of ['terminal'] as const) {
     const ui = await $.ui.mount({ plugin: 'current-affairs', surface, ...PANE })
     // #1 is Done, so it starts away; the branch is still in view.
     expect(await ui.find({ key: 'row:repo:repo-a/ticket:#1' })).toBeUndefined()

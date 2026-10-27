@@ -120,7 +120,10 @@ test('the Last week pane shows the trends rows and a building baseline', async (
       surface === 'terminal' ? (await ui.find({ type: 'Text', text: label }))?.text : (await ui.find({ key: `trend:${key}` }))?.text
     expect(await rowText('prsMerged', /PRs merged/)).toMatch(/PRs merged\s*12\s*↑\s*9\.7/)
     expect(await rowText('cycleDays', /Median cycle/)).toMatch(/Median cycle\s*2\.1d\s*↓\s*3\.4d/)
-    expect(await rowText('reworkShare', /Rework share/)).toMatch(/Rework share\s*18%.*building baseline \(3 active days saved\)/)
+    // A narrow app pane has room for the short form alone.
+    expect(await rowText('reworkShare', /Rework share/)).toMatch(
+      surface === 'terminal' ? /Rework share\s*18%.*building baseline \(3 active days saved\)/ : /Rework share\s*18%.*building, 3\/5 days/,
+    )
     expect(await rowText('ticketsPerDay', /Items \/ day/)).toMatch(/Items \/ day\s*4\.2\s*→/)
     await ui.unmount()
   }
