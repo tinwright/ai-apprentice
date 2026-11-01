@@ -34,6 +34,20 @@ test('activity lands in local-time cells, lanes per issue colored by repo', asyn
   expect(t.lanes[0].color).toBe(t.lanes[1].color)
   expect(t.lanes[2].color).toBe('#8a8a8a')
   expect(t.dayLabels.at(-1)).toBe('Su11')
+  // By repo, a repo's issues and loose sessions share one lane.
+  const byRepo = buildTimeline(
+    [
+      session({ id: 'a', ticket: '#1', repo: 'repo-a', activity: { '2026-10-11T14': 10 } }),
+      session({ id: 'b', repo: 'repo-a', activity: { '2026-10-07T09': 5 } }),
+      session({ id: 'c', activity: { '2026-10-05T12': 1 } }),
+    ],
+    {},
+    NOW,
+    TZ,
+    4,
+    'repo',
+  )
+  expect(byRepo.lanes.map(l => [l.label, l.total])).toEqual([['repo-a', 15], ['Exploration', 1]])
   expect(t.daily.at(-1)).toBe(12)
   expect(t.activeDays).toBe(3)
 })
@@ -94,7 +108,11 @@ test('the Last week pane draws lanes, the axis and the legend on every surface',
     })
     // 20 minutes on the 11th, 5 on the 5th: 25 minutes for the week.
     expect(await ui.find({ type: 'Text', text: /0\.4h worked · 2 sessions · 2\/7 active days/ })).toBeDefined()
+    // Lanes start one per repo; the toggle splits them by issue or branch.
+    expect(await ui.find({ type: 'Text', text: /#1 chat/ })).toBeUndefined()
+    await ui.press({ key: 'by' })
     expect(await ui.find({ type: 'Text', text: /#1 chat/ })).toBeDefined()
+    await ui.press({ key: 'by' })
     if (surface === 'terminal') {
       expect((await ui.find({ key: 'hours' }))?.text).toContain('0.3h')
       expect(await ui.find({ type: 'Text', text: /Su11/ })).toBeDefined()

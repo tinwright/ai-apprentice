@@ -79,4 +79,13 @@ test('a limit\'s pace is where it ends up by its reset at the rate so far', () =
   expect(usageRows({ context: { window: 1 }, rateLimits: [{ kind: 'seven_day', percentUsed: 3, resetsAt: hours(5 * 24) }] }, now)[0].pace).toBe(
     'on pace for 11% by reset',
   )
+  // Six hours into the week, too early for a pace: where an even spread would be by now, amber when ahead of it.
+  const early = usageRows({ context: { window: 1 }, rateLimits: [{ kind: 'seven_day', percentUsed: 3, resetsAt: hours(7 * 24 - 6) }] }, now)[0]
+  expect(early.pace).toBe('even pace would be 4% by now')
+  expect(early.paceColor).toBe('green')
+  const ahead = usageRows({ context: { window: 1 }, rateLimits: [{ kind: 'seven_day', percentUsed: 4, resetsAt: hours(7 * 24 - 1) }] }, now)[0]
+  expect(ahead.pace).toBe('even pace would be 1% by now')
+  expect(ahead.paceColor).toBe('yellow')
+  // Twelve hours in, a week has its pace.
+  expect(limitPace({ kind: 'seven_day', percentUsed: 4, resetsAt: hours(7 * 24 - 12) }, now)?.percent).toBe(56)
 })

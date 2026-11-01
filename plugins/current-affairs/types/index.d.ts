@@ -43,6 +43,9 @@ export type Trends = {
   ticketsPerDay: TrendMetric
 }
 
+// How the Last week pane splits its lanes: one per repo, or one per issue or branch.
+export type TimelineBy = 'repo' | 'issue'
+
 // This session's context fill and the account's rate-limit windows, from $.session.usage().
 export type LiveUsage = {
   context: { tokens?: number; window: number; percent?: number }
@@ -71,6 +74,8 @@ declare module 'claude-code' {
       showHidden: boolean
       // Sessions too long to read without jq, found missing in the last scan.
       unreadSessions: number
+      // How the Last week pane splits its lanes; per repo unless switched.
+      timelineBy: TimelineBy
     }
   }
 }
