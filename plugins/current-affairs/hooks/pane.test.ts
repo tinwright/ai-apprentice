@@ -105,10 +105,14 @@ test('outside the terminal the pane keeps to the figures, today\'s and the last 
   expect(week).toContain('$4.00')
   expect(week).toContain('2 sessions')
   expect(week).toContain('3/7 days')
+  // A small heading sits over each group in the app, and nowhere in the terminal.
+  expect((await ui.find({ key: 'heading:usage' }))?.text).toBe('USAGE')
+  expect((await ui.find({ key: 'heading:totals' }))?.text).toBe('ACTIVITY')
   await ui.unmount()
 
   // The terminal keeps its list as well.
   const terminal = await $.ui.mount({ plugin: 'current-affairs', surface: 'terminal', ...PANE })
+  expect(await terminal.find({ key: 'heading:totals' })).toBeUndefined()
   expect(await terminal.find({ key: 'row:repo:repo-a' })).toBeDefined()
   expect(await terminal.find({ key: 'totals:week' })).toBeDefined()
   await terminal.unmount()

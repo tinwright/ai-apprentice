@@ -70,6 +70,7 @@ const contextWarned = atom({ plugin: 'current-affairs', key: 'contextWarned' } a
 const hidden = atom({ plugin: 'current-affairs', key: 'hidden' } as const, {})
 const showHidden = atom({ plugin: 'current-affairs', key: 'showHidden' } as const, false)
 const unreadSessions = atom({ plugin: 'current-affairs', key: 'unreadSessions' } as const, 0)
+const timelineBy = atom({ plugin: 'current-affairs', key: 'timelineBy' } as const, 'repo')
 
 type Cached = { mtimeMs: number; size: number; summary: Summary }
 
@@ -277,12 +278,14 @@ export const register: Register = (on, options) => {
     })
     await $.state.set({ plugin: 'current-affairs', key: 'titles' }, ((await $.store.get('titles')) ?? {}) as Record<string, TicketTitle>)
     await $.state.set({ plugin: 'current-affairs', key: 'hidden' }, ((await $.store.get('hidden')) ?? {}) as Record<string, number | false>)
+    // Last week opens first, so Recent work is the one in front.
+    void $.ui.open({ id: TIMELINE, title: 'Last week' })
     void $.ui.open({ id: PANE, title: 'Recent work' })
     await $.state.set({ plugin: 'current-affairs', key: 'isScanning' }, false)
     void scan($)
     await $.command.register({
       name: 'timeline',
-      description: 'Show the last week of work as lanes per issue or branch, with two-week trends',
+      description: 'Show the last week of work as lanes per repo or per issue or branch, with two-week trends',
     })
     $.clock.every(RESCAN_MS, () => void scan($))
     const now = await $.session.usage().catch(() => undefined)
@@ -501,25 +504,39 @@ export const register: Register = (on, options) => {
       </Box>
     )
 
+    // In the app, a heading over each group and the figures bolder than their labels, so the pane
+    // reads at a glance. Only props older Claude Code builds accept: a refused prop drops the pane.
+    const heading = (key: string, title: string) =>
+      !isTerminal && (
+        <Box key={`heading:${key}`} marginTop={1}>
+          <Text bold dimColor>{title.toUpperCase()}</Text>
+        </Box>
+      )
+
     // Hours worked, sessions and cost, today and over the last 7 days, as the timeline counts them.
     const totalsBlock = () => {
       if (list.length === 0) return undefined
       const { today, week } = recentTotals(list, nowMs, tz)
-      const figures = (t: Totals, ofWeek: boolean) =>
-        [
-          formatHours(t.hours),
-          t.usd ? formatUsd(t.usd) : undefined,
-          `${t.sessions} ${t.sessions === 1 ? 'session' : 'sessions'}`,
-          ofWeek ? `${t.activeDays}/${DAYS} days` : undefined,
+      // Hours and cost carry the weight; the counts and separators stay quiet.
+      const figures = (t: Totals, ofWeek: boolean) => {
+        const parts: [string, boolean][] = [
+          [formatHours(t.hours), true],
+          ...(t.usd ? [[formatUsd(t.usd), true] as [string, boolean]] : []),
+          [`${t.sessions} ${t.sessions === 1 ? 'session' : 'sessions'}`, false],
+          ...(ofWeek ? [[`${t.activeDays}/${DAYS} days`, false] as [string, boolean]] : []),
         ]
-          .filter(Boolean)
-          .join(' · ')
-      return (
-        <Box key="totals" flexDirection="column" marginTop={1}>
+        return parts.flatMap(([text, isStrong], i) => [
+          i > 0 ? <Text key={`sep:${i}`} dimColor={!isTerminal}> · </Text> : undefined,
+          <Text key={`fig:${i}`} bold={isStrong && !isTerminal}>{text}</Text>,
+        ])
+      }
+      return [
+        heading('totals', 'Activity'),
+        <Box key="totals" flexDirection="column" marginTop={isTerminal ? 1 : 0}>
           {labelled('totals:today', 'Today', <Text wrap="truncate-end">{today.sessions ? figures(today, false) : 'nothing yet'}</Text>)}
           {labelled('totals:week', 'Last 7 days', <Text wrap="truncate-end">{figures(week, true)}</Text>)}
-        </Box>
-      )
+        </Box>,
+      ]
     }
 
     // This session's context and the account's limits, one meter each with where a limit is
@@ -534,8 +551,9 @@ export const register: Register = (on, options) => {
       // Block characters only line up in a monospaced terminal; elsewhere each meter is a drawn bar
       // and the label sits in a fixed-width column.
       if (Svg) {
-        return (
-          <Box key="usage" flexDirection="column" marginTop={1} gap={1}>
+        return [
+          heading('usage', 'Usage'),
+          <Box key="usage" flexDirection="column" gap={1}>
             {rows.map(r => (
               <Box key={`usage:${r.key}`} flexDirection="column">
                 {labelled(
@@ -545,7 +563,8 @@ export const register: Register = (on, options) => {
                     <Svg source={meterSvg(r.percent)} alt={`${r.label}: ${Math.round(r.percent)}%`} width={METER_PX} height={8} />
                   </Box>,
                   <Box width={5} flexShrink={0}>
-                    <Text>{`${Math.round(r.percent)}%`}</Text>
+                    {/* The figure takes the meter's color once it is past green. */}
+                    <Text bold={!isTerminal} color={r.percent >= 70 ? levelColor(r.percent) : undefined}>{`${Math.round(r.percent)}%`}</Text>
                   </Box>,
                   <Text dimColor wrap="truncate-end">{r.detail}</Text>,
                 )}
@@ -554,7 +573,7 @@ export const register: Register = (on, options) => {
             ))}
             {live.costUsd !== undefined && (
               <Box key="usage:cost" flexDirection="column">
-                {labelled('usage:cost:session', 'Cost', <Text>${live.costUsd.toFixed(2)}</Text>, <Text dimColor wrap="truncate-end">this session</Text>)}
+                {labelled('usage:cost:session', 'Cost', <Text bold={!isTerminal}>${live.costUsd.toFixed(2)}</Text>, <Text dimColor wrap="truncate-end">this session</Text>)}
                 {turn &&
                   labelled(
                     'usage:cost:turn',
@@ -564,8 +583,8 @@ export const register: Register = (on, options) => {
                   )}
               </Box>
             )}
-          </Box>
-        )
+          </Box>,
+        ]
       }
       return (
         <Box key="usage" flexDirection="column" marginTop={1}>
@@ -660,12 +679,13 @@ export const register: Register = (on, options) => {
 
   on('ui.render', { component: 'Pane', requestId: TIMELINE }, async ($, e) => {
     const elements = $.ui.resolve(e)
-    const { Box, Text } = elements
+    const { Box, Text, Button } = elements
     const Svg = e.surface !== 'terminal' && 'Svg' in elements ? elements.Svg : undefined
     const list = await read($, sessions)
     const issues = await read($, titles)
     const tz = await read($, tzOffset)
     const trend = await read($, trends)
+    const by = await read($, timelineBy)
     const nowMs = await $.clock.now()
     const width = Math.max(40, e.props.bodyColumns ?? e.viewport?.columns ?? 80)
     const labelWidth = Math.min(30, Math.max(14, Math.floor(width * 0.3)))
@@ -674,7 +694,17 @@ export const register: Register = (on, options) => {
 
     // Drawn as SVG, a day has room for 3-hour cells whatever the pane's width.
     const cellsPerDay = Svg ? 8 : pickCellsPerDay(width - labelWidth - 1)
-    const t = buildTimeline(list, issues, nowMs, tz, cellsPerDay)
+    const t = buildTimeline(list, issues, nowMs, tz, cellsPerDay, by)
+    // Switches the lanes between one per repo and one per issue or branch.
+    const byToggle = (
+      <Button
+        key="by"
+        label={by === 'repo' ? 'by issue' : 'by repo'}
+        hotkey="g"
+        plain
+        onPress={() => update($, timelineBy, current => (current === 'repo' ? 'issue' : 'repo'))}
+      />
+    )
     const max = Math.max(1, ...t.lanes.flatMap(lane => lane.cells))
     const room = Math.max(3, (e.viewport?.rows ?? 40) - (trend ? 16 : 10))
     const shown = t.lanes.length <= room ? t.lanes : [...t.lanes].sort((a, b) => b.total - a.total).slice(0, room - 1)
@@ -708,10 +738,13 @@ export const register: Register = (on, options) => {
       )
       return (
         <Box flexDirection="column" gap={1}>
-          <Text dimColor>
-            {formatHours(t.hours)} worked · {t.sessionCount} sessions · {t.activeDays}/{DAYS} active days · {t.prCount} PRs
-            {t.busiestDay ? ` · busiest ${t.busiestDay}` : ''}
-          </Text>
+          <Box flexDirection="row" justifyContent="space-between" gap={1}>
+            <Text dimColor wrap="truncate-end">
+              {formatHours(t.hours)} worked · {t.sessionCount} sessions · {t.activeDays}/{DAYS} active days · {t.prCount} PRs
+              {t.busiestDay ? ` · busiest ${t.busiestDay}` : ''}
+            </Text>
+            <Box flexShrink={0}>{byToggle}</Box>
+          </Box>
           <Box flexDirection="column" gap={1}>
             {row('axis', undefined, undefined, false, axisSvg(t.dayLabels, t.todayIndex), t.dayLabels.join(', '))}
             {lanes.map(lane => row(`lane:${lane.key}`, lane.label, lane.color, false, laneSvg(lane.cells, cellsPerDay, max, lane.color), `${lane.label}: activity by day`))}
@@ -758,10 +791,13 @@ export const register: Register = (on, options) => {
 
     return (
       <Box flexDirection="column">
-        <Text dimColor>
-          {formatHours(t.hours)} worked · {t.sessionCount} sessions · {t.activeDays}/{DAYS} active days · {t.prCount} PRs
-          {t.busiestDay ? ` · busiest ${t.busiestDay}` : ''} · {24 / cellsPerDay}h per cell
-        </Text>
+        <Box flexDirection="row" justifyContent="space-between" gap={1}>
+          <Text dimColor wrap="truncate-end">
+            {formatHours(t.hours)} worked · {t.sessionCount} sessions · {t.activeDays}/{DAYS} active days · {t.prCount} PRs
+            {t.busiestDay ? ` · busiest ${t.busiestDay}` : ''} · {24 / cellsPerDay}h per cell
+          </Text>
+          <Box flexShrink={0}>{byToggle}</Box>
+        </Box>
         <Text> </Text>
         <Text dimColor>
           {gutter}

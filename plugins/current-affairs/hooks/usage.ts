@@ -55,10 +55,22 @@ const span = (ms: number) => {
   return hours < 48 ? `${hours}h` : `${Math.round(hours / 24)}d`
 }
 
+// The longest a window waits before its rate is taken as a pace.
+const PACE_AFTER_MS = 12 * 3_600_000
+
+/** How much of a window has passed, in percent; undefined for a window of unknown length. */
+export function windowElapsed(limit: LiveUsage['rateLimits'][number], nowMs: number): number | undefined {
+  const length = WINDOW_MS[limit.kind]
+  const at = limit.resetsAt ? Date.parse(limit.resetsAt) : NaN
+  if (!length || Number.isNaN(at) || at <= nowMs) return undefined
+  return Math.min(100, Math.max(0, ((length - (at - nowMs)) / length) * 100))
+}
+
 /**
  * Where a limit window is heading at the rate it has filled so far: the percent it reaches by its
  * reset, or how soon it runs out if that comes first. Undefined for a window of unknown length, or
- * one less than a tenth through, while the rate says little.
+ * one less than a tenth through (12 hours at most, so a weekly limit has one by its first evening),
+ * while the rate says little.
  */
 export function limitPace(
   limit: LiveUsage['rateLimits'][number],
@@ -68,7 +80,7 @@ export function limitPace(
   const at = limit.resetsAt ? Date.parse(limit.resetsAt) : NaN
   if (!length || Number.isNaN(at) || at <= nowMs || limit.percentUsed <= 0) return undefined
   const elapsed = length - (at - nowMs)
-  if (elapsed < length / 10) return undefined
+  if (elapsed < Math.min(length / 10, PACE_AFTER_MS)) return undefined
   const percent = (limit.percentUsed / elapsed) * length
   if (percent < 100) return { percent }
   return { percent, runsOutInMs: Math.max(0, ((100 - limit.percentUsed) / limit.percentUsed) * elapsed) }
@@ -99,13 +111,15 @@ export function usageRows(usage: LiveUsage, nowMs: number): UsageRow[] {
   for (const limit of usage.rateLimits) {
     const reset = resetsIn(limit.resetsAt, nowMs)
     const pace = limitPace(limit, nowMs)
+    // Too early for a pace, the line says where an even spread over the window would be by now.
+    const gone = pace ? undefined : windowElapsed(limit, nowMs)
     rows.push({
       key: limit.kind,
       label: limitLabel(limit.kind),
       percent: limit.percentUsed,
       detail: reset ? `resets ${reset}` : '',
-      pace: paceText(pace),
-      paceColor: pace ? levelColor(pace.percent) : undefined,
+      pace: paceText(pace) ?? (gone === undefined ? undefined : `even pace would be ${Math.max(1, Math.round(gone))}% by now`),
+      paceColor: pace ? levelColor(pace.percent) : gone === undefined ? undefined : limit.percentUsed > gone ? 'yellow' : 'green',
     })
   }
   return rows

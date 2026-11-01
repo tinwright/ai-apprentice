@@ -1,4 +1,4 @@
-import type { TicketTitle, WorkSession } from '../types'
+import type { TicketTitle, TimelineBy, WorkSession } from '../types'
 import { sectionSessions, themeOf } from './classify'
 import { titleOf } from './titles'
 
@@ -124,6 +124,8 @@ export function buildTimeline(
   nowMs: number,
   tzOffsetMin: number,
   cellsPerDay: number,
+  // One lane per repo (and one for Exploration), or one per issue or branch inside each repo.
+  by: TimelineBy = 'issue',
 ): Timeline {
   const today = localDay(nowMs, tzOffsetMin)
   const firstDay = today - DAYS + 1
@@ -159,6 +161,12 @@ export function buildTimeline(
   const lanes: Lane[] = []
   for (const section of sections) {
     const color = colorOf(section.label)
+    if (by === 'repo') {
+      const cells = cellsOf([...section.tickets.flatMap(g => g.sessions), ...section.loose])
+      const label = section.kind === 'exploration' ? 'Exploration' : section.label
+      lanes.push({ key: section.key, label, repo: section.label, color, cells, total: sum(cells) })
+      continue
+    }
     for (const group of section.tickets) {
       const cells = cellsOf(group.sessions)
       const title = titleOf(titles, group.sessions, group.label)?.summary || themeOf(group) || ''
