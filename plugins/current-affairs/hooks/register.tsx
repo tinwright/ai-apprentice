@@ -504,14 +504,12 @@ export const register: Register = (on, options) => {
       </Box>
     )
 
-    // In the app, a small heading over each group, the figures heavier than their labels, and the
-    // notes beside them a size down, so the pane reads at a glance.
-    const strong = isTerminal ? undefined : 'semibold'
-    const note = isTerminal ? undefined : 'footnote'
+    // In the app, a heading over each group and the figures bolder than their labels, so the pane
+    // reads at a glance. Only props older Claude Code builds accept: a refused prop drops the pane.
     const heading = (key: string, title: string) =>
       !isTerminal && (
         <Box key={`heading:${key}`} marginTop={1}>
-          <Text size="caption" weight="semibold" dimColor>{title.toUpperCase()}</Text>
+          <Text bold dimColor>{title.toUpperCase()}</Text>
         </Box>
       )
 
@@ -529,7 +527,7 @@ export const register: Register = (on, options) => {
         ]
         return parts.flatMap(([text, isStrong], i) => [
           i > 0 ? <Text key={`sep:${i}`} dimColor={!isTerminal}> · </Text> : undefined,
-          <Text key={`fig:${i}`} weight={isStrong ? strong : undefined} tabular={isStrong && !isTerminal}>{text}</Text>,
+          <Text key={`fig:${i}`} bold={isStrong && !isTerminal}>{text}</Text>,
         ])
       }
       return [
@@ -566,22 +564,22 @@ export const register: Register = (on, options) => {
                   </Box>,
                   <Box width={5} flexShrink={0}>
                     {/* The figure takes the meter's color once it is past green. */}
-                    <Text weight={strong} tabular color={r.percent >= 70 ? levelColor(r.percent) : undefined}>{`${Math.round(r.percent)}%`}</Text>
+                    <Text bold={!isTerminal} color={r.percent >= 70 ? levelColor(r.percent) : undefined}>{`${Math.round(r.percent)}%`}</Text>
                   </Box>,
-                  <Text size={note} dimColor wrap="truncate-end">{r.detail}</Text>,
+                  <Text dimColor wrap="truncate-end">{r.detail}</Text>,
                 )}
-                {r.pace && labelled(`usage:${r.key}:pace`, '', <Text size={note} color={r.paceColor} dimColor={r.paceColor === 'green'} wrap="truncate-end">{r.pace}</Text>)}
+                {r.pace && labelled(`usage:${r.key}:pace`, '', <Text color={r.paceColor} dimColor={r.paceColor === 'green'} wrap="truncate-end">{r.pace}</Text>)}
               </Box>
             ))}
             {live.costUsd !== undefined && (
               <Box key="usage:cost" flexDirection="column">
-                {labelled('usage:cost:session', 'Cost', <Text weight={strong} tabular>${live.costUsd.toFixed(2)}</Text>, <Text size={note} dimColor wrap="truncate-end">this session</Text>)}
+                {labelled('usage:cost:session', 'Cost', <Text bold={!isTerminal}>${live.costUsd.toFixed(2)}</Text>, <Text dimColor wrap="truncate-end">this session</Text>)}
                 {turn &&
                   labelled(
                     'usage:cost:turn',
                     '',
-                    <Text tabular>${turn.usd.toFixed(2)}</Text>,
-                    <Text size={note} dimColor wrap="truncate-end">last turn, {duration(turn.durationMs)}</Text>,
+                    <Text>${turn.usd.toFixed(2)}</Text>,
+                    <Text dimColor wrap="truncate-end">last turn, {duration(turn.durationMs)}</Text>,
                   )}
               </Box>
             )}
@@ -626,7 +624,7 @@ export const register: Register = (on, options) => {
     return (
       <Box flexDirection="column">
         <Box flexDirection="row" justifyContent="space-between" gap={1}>
-          <Text size={note} dimColor wrap="truncate-end">
+          <Text dimColor wrap="truncate-end">
             {isTerminal ? `${list.length} sessions · ${WINDOW_DAYS}d` : isScanning ? '' : 'updated'}
             {isScanning ? `${isTerminal ? ' · ' : ''}scanning…` : lastScan ? `${isTerminal ? ' ·' : ''} ${ago(lastScan, nowMs)} ago` : ''}
           </Text>
