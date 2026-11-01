@@ -45,6 +45,20 @@ export function costOf(byModel: Record<string, ModelTokens> | undefined): number
   return usd
 }
 
+/**
+ * Input tokens, and how many of them were read from the prompt cache: uncached input, cache writes
+ * and cache reads together, then the reads alone.
+ */
+export function inputOf(byModel: Record<string, ModelTokens> | undefined): { input: number; cacheRead: number } {
+  let input = 0
+  let cacheRead = 0
+  for (const [uncached, write5m, write1h, read] of Object.values(byModel ?? {})) {
+    input += uncached + write5m + write1h + read
+    cacheRead += read
+  }
+  return { input, cacheRead }
+}
+
 /** Dollars, short: $0.42, $3.10, $27, $1.2k. */
 export function formatUsd(usd: number): string {
   if (usd >= 1000) return `$${(usd / 1000).toFixed(1)}k`

@@ -35,11 +35,7 @@ export function limitLabel(kind: string): string {
 export function resetsIn(iso: string | undefined, nowMs: number): string | undefined {
   const at = iso ? Date.parse(iso) : NaN
   if (Number.isNaN(at) || at <= nowMs) return undefined
-  const minutes = Math.max(1, Math.round((at - nowMs) / 60_000))
-  if (minutes < 60) return `in ${minutes}m`
-  const hours = Math.round(minutes / 60)
-  if (hours < 48) return `in ${hours}h`
-  return `in ${Math.round(hours / 24)}d`
+  return `in ${span(at - nowMs)}`
 }
 
 /** green, then yellow past 70%, red past 90%, so a filling window stands out. */
@@ -47,10 +43,14 @@ export const levelColor = (percent: number) => (percent >= 90 ? 'red' : percent 
 
 const WINDOW_MS: Record<string, number> = { five_hour: 5 * 3_600_000, seven_day: 7 * 86_400_000 }
 
-/** A span to read at a glance: 40m, 3h, 2d. */
-const span = (ms: number) => {
+/**
+ * A span to read at a glance: 40m, 2h 35m, 7h, 2d. Under 4 hours the minutes stay, so a limit that
+ * runs out at 2h 35m does not read the same as a reset at 3h 20m.
+ */
+export const span = (ms: number) => {
   const minutes = Math.max(1, Math.round(ms / 60_000))
   if (minutes < 60) return `${minutes}m`
+  if (minutes < 240) return minutes % 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes / 60}h`
   const hours = Math.round(minutes / 60)
   return hours < 48 ? `${hours}h` : `${Math.round(hours / 24)}d`
 }

@@ -17,9 +17,9 @@ import {
 import { closingIssue, computeTrends, direction, MIN_BASELINE_DAYS, mergeHistory, type History, type MergedPr } from './trends'
 import { pool } from './pool'
 import { isFinished, issueViewArgs, parseIssue, staleRefs, titleOf, type TitleConfig } from './titles'
-import { axis, axisSvg, buildTimeline, dailyBars, dailySvg, dayHours, DAYS, formatHours, hoursSvg, laneRuns, laneSvg, pickCellsPerDay, recentTotals, TIMELINE_PX, EXPLORATION_COLOR, type Totals } from './timeline'
-import { contextWarning, levelColor, meter, tokens, usageRows } from './usage'
-import { costOf, formatUsd } from './pricing'
+import { axis, axisSvg, buildTimeline, dailyBars, dailySvg, dayHours, DAYS, formatHours, hoursSvg, laneRuns, laneSvg, pickCellsPerDay, recentTotals, sinceBreak, cacheHitRate, TIMELINE_PX, EXPLORATION_COLOR, type Totals } from './timeline'
+import { contextWarning, levelColor, meter, span, tokens, usageRows } from './usage'
+import { costOf, formatUsd, inputOf } from './pricing'
 import { summarize } from './summarize'
 
 const PANE = 'current-affairs'
@@ -42,6 +42,8 @@ const TREND_ROWS: {
   { key: 'ticketsPerDay', label: 'Items / day', isHigherBetter: false, format: n => n.toFixed(1) },
 ]
 const RESCAN_MS = 5 * 60_000
+// How long without a break before the Break row turns amber.
+const LONG_STRETCH_MS = 2 * 3_600_000
 // The most one $.fs.read takes: 4 MiB.
 const READ_LIMIT = 4 * 1024 * 1024
 const METER_PX = 120
@@ -231,9 +233,14 @@ async function scan($: EngineInterface) {
     })
 
     const subagentUsd = new Map<string, number>()
+    const subagentInput = new Map<string, { input: number; cacheRead: number }>()
     for (const sub of subagentFiles) {
-      const usd = costOf(fresh[sub.path]?.summary.tokens)
+      const tokens = fresh[sub.path]?.summary.tokens
+      const usd = costOf(tokens)
       if (usd) subagentUsd.set(sub.parent, (subagentUsd.get(sub.parent) ?? 0) + usd)
+      const { input, cacheRead } = inputOf(tokens)
+      const sum = subagentInput.get(sub.parent) ?? { input: 0, cacheRead: 0 }
+      if (input) subagentInput.set(sub.parent, { input: sum.input + input, cacheRead: sum.cacheRead + cacheRead })
     }
     const list: WorkSession[] = []
     for (const file of files) {
@@ -243,7 +250,12 @@ async function scan($: EngineInterface) {
       const session = toSession(file.id, cached.summary, repoByCwd.get(cwd), slugByCwd.get(cwd))
       if (!session) continue
       const usd = (session.costUsd ?? 0) + (subagentUsd.get(file.id) ?? 0)
-      list.push(usd ? { ...session, costUsd: usd } : session)
+      const sub = subagentInput.get(file.id)
+      list.push({
+        ...session,
+        ...(usd ? { costUsd: usd } : {}),
+        ...(sub ? { inputTokens: (session.inputTokens ?? 0) + sub.input, cacheReadTokens: (session.cacheReadTokens ?? 0) + sub.cacheRead } : {}),
+      })
     }
     await $.state.set({ plugin: 'current-affairs', key: 'sessions' }, list)
     await $.state.set({ plugin: 'current-affairs', key: 'scannedAtMs' }, nowMs)
@@ -530,11 +542,50 @@ export const register: Register = (on, options) => {
           <Text key={`fig:${i}`} bold={isStrong && !isTerminal}>{text}</Text>,
         ])
       }
+      // How long since a break, amber past two hours; a break of four hours or more is a new day's
+      // start, not worth a row.
+      const stretch = sinceBreak(list, nowMs)
+      const breakRow =
+        stretch &&
+        ('workingMs' in stretch
+          ? labelled(
+              'totals:break',
+              'Break',
+              <Text wrap="truncate-end">
+                <Text dimColor={!isTerminal}>last one </Text>
+                <Text bold={!isTerminal} color={stretch.workingMs >= LONG_STRETCH_MS ? 'yellow' : undefined}>{span(stretch.workingMs)}</Text>
+                <Text dimColor={!isTerminal}> ago</Text>
+              </Text>,
+            )
+          : stretch.breakMs < 4 * 3_600_000 &&
+            labelled('totals:break', 'Break', <Text dimColor wrap="truncate-end">now, {span(stretch.breakMs)} so far</Text>))
+      // The share of input read from the prompt cache: a falling one is a sign to start fresh.
+      const rate = (t: Totals) => {
+        const percent = cacheHitRate(t)
+        return percent === undefined ? undefined : `${Math.round(percent)}%`
+      }
+      const cacheParts = [
+        rate(today) && [rate(today), 'today'],
+        rate(week) && [rate(week), 'last 7 days'],
+      ].filter(Boolean) as [string, string][]
       return [
         heading('totals', 'Activity'),
         <Box key="totals" flexDirection="column" marginTop={isTerminal ? 1 : 0}>
           {labelled('totals:today', 'Today', <Text wrap="truncate-end">{today.sessions ? figures(today, false) : 'nothing yet'}</Text>)}
           {labelled('totals:week', 'Last 7 days', <Text wrap="truncate-end">{figures(week, true)}</Text>)}
+          {breakRow}
+          {cacheParts.length > 0 &&
+            labelled(
+              'totals:cache',
+              'Cache hits',
+              <Text wrap="truncate-end">
+                {cacheParts.flatMap(([percent, when], i) => [
+                  i > 0 ? <Text key={`cache-sep:${i}`} dimColor={!isTerminal}> · </Text> : undefined,
+                  <Text key={`cache:${i}`} bold={!isTerminal}>{percent}</Text>,
+                  <Text key={`cache-when:${i}`} dimColor={!isTerminal}> {when}</Text>,
+                ])}
+              </Text>,
+            )}
         </Box>,
       ]
     }

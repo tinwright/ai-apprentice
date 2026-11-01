@@ -69,16 +69,52 @@ export function hoursWorked(sessions: WorkSession[], firstDay: number, tzOffsetM
   return minutes.map(m => m / 60)
 }
 
-export type Totals = { hours: number; usd: number; sessions: number; activeDays: number }
+/**
+ * How long you have worked without a break, by the rule hours worked uses: any session active in a
+ * 5-minute slot, with pauses of up to 15 minutes still counted as working. Past 15 minutes since the
+ * last active slot, you are on a break, and `breakMs` says for how long. Undefined with no activity.
+ */
+export function sinceBreak(sessions: WorkSession[], nowMs: number): { workingMs: number } | { breakMs: number } | undefined {
+  const starts = [...new Set(sessions.flatMap(s => s.slots ?? []))]
+    .map(key => Date.parse(`${key}:00Z`))
+    .filter(ms => !Number.isNaN(ms) && ms <= nowMs)
+    .sort((a, b) => b - a)
+  const last = starts[0]
+  if (last === undefined) return undefined
+  const idle = nowMs - (last + SLOT_MS)
+  if (idle > BRIDGE_MS) return { breakMs: idle }
+  let first = last
+  for (const ms of starts.slice(1)) {
+    if (first - ms > BRIDGE_MS) break
+    first = ms
+  }
+  return { workingMs: nowMs - first }
+}
+
+export type Totals = {
+  hours: number
+  usd: number
+  sessions: number
+  activeDays: number
+  // Input tokens, cached and uncached, and those read from the prompt cache.
+  input: number
+  cacheRead: number
+}
+
+/** The share of input tokens read from the prompt cache, in percent; undefined with no input. */
+export const cacheHitRate = (t: Totals) => (t.input ? (t.cacheRead / t.input) * 100 : undefined)
 
 /**
  * Today's work and the last 7 days': hours worked as the timeline counts them, sessions active, and
- * cost. A session's cost is split across the days it was active in, by its activity on each.
+ * cost. A session's cost and tokens are split across the days it was active in, by its activity on
+ * each.
  */
 export function recentTotals(sessions: WorkSession[], nowMs: number, tzOffsetMin: number): { today: Totals; week: Totals } {
   const today = localDay(nowMs, tzOffsetMin)
   const firstDay = today - DAYS + 1
   const usdByDay = new Array<number>(DAYS).fill(0)
+  const inputByDay = new Array<number>(DAYS).fill(0)
+  const cacheReadByDay = new Array<number>(DAYS).fill(0)
   const sessionsByDay = Array.from({ length: DAYS }, () => new Set<string>())
   for (const session of sessions) {
     const entries = Object.entries(session.activity)
@@ -87,7 +123,10 @@ export function recentTotals(sessions: WorkSession[], nowMs: number, tzOffsetMin
       const day = localDay(Date.parse(`${hour}:00:00Z`), tzOffsetMin) - firstDay
       if (!(day >= 0 && day < DAYS)) continue
       sessionsByDay[day].add(session.id)
-      if (session.costUsd && records) usdByDay[day] += (session.costUsd * count) / records
+      if (!records) continue
+      if (session.costUsd) usdByDay[day] += (session.costUsd * count) / records
+      if (session.inputTokens) inputByDay[day] += (session.inputTokens * count) / records
+      if (session.cacheReadTokens) cacheReadByDay[day] += (session.cacheReadTokens * count) / records
     }
   }
   const hoursByDay = hoursWorked(sessions, firstDay, tzOffsetMin)
@@ -98,12 +137,16 @@ export function recentTotals(sessions: WorkSession[], nowMs: number, tzOffsetMin
       usd: usdByDay[DAYS - 1],
       sessions: sessionsByDay[DAYS - 1].size,
       activeDays: sessionsByDay[DAYS - 1].size ? 1 : 0,
+      input: inputByDay[DAYS - 1],
+      cacheRead: cacheReadByDay[DAYS - 1],
     },
     week: {
       hours: sum(hoursByDay),
       usd: sum(usdByDay),
       sessions: new Set(sessionsByDay.flatMap(ids => [...ids])).size,
       activeDays: sessionsByDay.filter(ids => ids.size > 0).length,
+      input: sum(inputByDay),
+      cacheRead: sum(cacheReadByDay),
     },
   }
 }

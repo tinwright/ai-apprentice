@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 
 import type { WorkSession } from '../types'
-import { axis, buildTimeline, dailyBars, dayHours, formatHours, hoursWorked, laneRuns, pickCellsPerDay } from './timeline'
+import { axis, buildTimeline, cacheHitRate, dailyBars, dayHours, formatHours, hoursWorked, laneRuns, pickCellsPerDay, recentTotals, sinceBreak } from './timeline'
 
 // Sunday 11 Oct 2026, 15:00 UTC, at UTC+1.
 const NOW = Date.parse('2026-10-11T15:00:00Z')
@@ -125,4 +125,30 @@ test('the Last week pane draws lanes, the axis and the legend on every surface',
     expect(await ui.find({ type: 'Text', text: /repo-a/ })).toBeDefined()
     await ui.unmount()
   }
+})
+
+test('time since a break bridges pauses of up to 15 minutes, and a longer gap is a break', () => {
+  const at = Date.parse('2026-10-11T12:00:00Z')
+  const slots = ['2026-10-11T09:00', '2026-10-11T10:00', '2026-10-11T10:10', '2026-10-11T11:50']
+  // 11:50 is 70 minutes after 10:10: a break, so this stretch began at 11:50.
+  expect(sinceBreak([session({ slots })], at)).toEqual({ workingMs: 10 * 60_000 })
+  // Two sessions together: 11:35 bridges to 11:50, and 11:20 to 11:35.
+  const other = session({ id: 'y', slots: ['2026-10-11T11:20', '2026-10-11T11:35'] })
+  expect(sinceBreak([session({ slots }), other], at)).toEqual({ workingMs: 40 * 60_000 })
+  // Nothing since 11:30's slot ended at 11:35: 25 minutes off is a break.
+  expect(sinceBreak([session({ slots: ['2026-10-11T11:30'] })], at)).toEqual({ breakMs: 25 * 60_000 })
+  expect(sinceBreak([session({})], at)).toBeUndefined()
+})
+
+test('the cache hit rate is split across days like cost, subagents included', () => {
+  // One session, two-thirds of its records today: 2/3 of its tokens count today.
+  const t = recentTotals(
+    [session({ inputTokens: 300, cacheReadTokens: 270, activity: { '2026-10-11T09': 2, '2026-10-10T09': 1 } })],
+    NOW,
+    TZ,
+  )
+  expect(Math.round(t.today.input)).toBe(200)
+  expect(Math.round(cacheHitRate(t.today) ?? 0)).toBe(90)
+  expect(Math.round(cacheHitRate(t.week) ?? 0)).toBe(90)
+  expect(cacheHitRate({ ...t.today, input: 0 })).toBeUndefined()
 })
