@@ -23,6 +23,9 @@ export type WorkSession = {
   contextTokens?: number
   // What its replies, and its subagents', would cost at API list prices.
   costUsd?: number
+  // Input tokens of its replies and its subagents', cached and uncached, and those read from the cache.
+  inputTokens?: number
+  cacheReadTokens?: number
   // Records per UTC hour, keyed "YYYY-MM-DDTHH".
   activity: Record<string, number>
   // The 5-minute slots with any activity, "YYYY-MM-DDTHH:MM" in UTC, for hours worked.

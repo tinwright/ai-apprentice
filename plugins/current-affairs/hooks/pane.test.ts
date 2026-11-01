@@ -89,7 +89,7 @@ test('the pane leads with this session\'s context and the account\'s limits', as
 test('outside the terminal the pane keeps to the figures, today\'s and the last 7 days\'', async ($, on) => {
   // Saturday 24 Oct 2026, 12:00 UTC; tzOffsetMin stays 0.
   const now = Date.parse('2026-10-24T12:00:00Z')
-  const today = { ...SESSIONS[0], id: 't1', lastMs: now, costUsd: 3, activity: { '2026-10-24T09': 2, '2026-10-20T09': 1 }, slots: ['2026-10-24T09:00', '2026-10-24T09:05'] }
+  const today = { ...SESSIONS[0], id: 't1', lastMs: now, costUsd: 3, inputTokens: 1000, cacheReadTokens: 900, activity: { '2026-10-24T09': 2, '2026-10-20T09': 1 }, slots: ['2026-10-24T09:00', '2026-10-24T09:05'] }
   const earlier = { ...SESSIONS[1], id: 't2', lastMs: now - 3 * 86_400_000, costUsd: 1, activity: { '2026-10-21T09': 4 }, slots: ['2026-10-21T09:00'] }
   on('state.get', { plugin: 'current-affairs', key: 'sessions' }, async () => ({ value: { value: [today, earlier], version: 1 } }))
   on('state.get', { plugin: 'current-affairs', key: 'usage' }, async () => ({ value: { value: USAGE, version: 1 } }))
@@ -108,6 +108,9 @@ test('outside the terminal the pane keeps to the figures, today\'s and the last 
   // A small heading sits over each group in the app, and nowhere in the terminal.
   expect((await ui.find({ key: 'heading:usage' }))?.text).toBe('USAGE')
   expect((await ui.find({ key: 'heading:totals' }))?.text).toBe('ACTIVITY')
+  // The last slot ended at 09:10, so by noon that is a break; and 90% of input came from the cache.
+  expect((await ui.find({ key: 'totals:break' }))?.text).toContain('now, 2h 50m so far')
+  expect((await ui.find({ key: 'totals:cache' }))?.text).toContain('90% today')
   await ui.unmount()
 
   // The terminal keeps its list as well.

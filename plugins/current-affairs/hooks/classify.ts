@@ -1,5 +1,5 @@
 import type { WorkSession } from '../types'
-import { costOf, type ModelTokens } from './pricing'
+import { costOf, inputOf, type ModelTokens } from './pricing'
 
 // What hooks/summarize.jq emits for one transcript.
 export type Summary = {
@@ -164,9 +164,16 @@ export function toSession(
     prNumber: s.prNumber ?? undefined,
     contextTokens: s.context || undefined,
     costUsd: costOf(s.tokens) || undefined,
+    ...cacheOf(s.tokens),
     activity: s.hours ?? {},
     slots: Object.keys(s.slots ?? {}),
   }
+}
+
+// A session's input tokens and cache reads, left out when it has none.
+export function cacheOf(tokens: Record<string, ModelTokens> | undefined): Pick<WorkSession, 'inputTokens' | 'cacheReadTokens'> {
+  const { input, cacheRead } = inputOf(tokens)
+  return input ? { inputTokens: input, cacheReadTokens: cacheRead } : {}
 }
 
 export function groupSessions(sessions: WorkSession[]): Group[] {

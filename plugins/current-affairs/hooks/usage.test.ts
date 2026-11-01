@@ -27,6 +27,9 @@ test('limit windows and resets are named for people', async () => {
   const now = Date.parse('2026-10-17T12:00:00Z')
   expect(resetsIn('2026-10-17T12:42:00Z', now)).toBe('in 42m')
   expect(resetsIn('2026-10-17T15:00:00Z', now)).toBe('in 3h')
+  // Under 4 hours the minutes stay, so a reset at 3h 20m and a run-out at 2h 35m read apart.
+  expect(resetsIn('2026-10-17T15:20:00Z', now)).toBe('in 3h 20m')
+  expect(resetsIn('2026-10-17T18:20:00Z', now)).toBe('in 6h')
   expect(resetsIn('2026-10-20T12:00:00Z', now)).toBe('in 3d')
   expect(resetsIn('2026-10-17T11:00:00Z', now)).toBeUndefined()
   expect(resetsIn(undefined, now)).toBeUndefined()
@@ -71,7 +74,7 @@ test('a limit\'s pace is where it ends up by its reset at the rate so far', () =
   // An hour into the 5-hour window at 40%: out an hour and a half from now.
   const fast = limitPace({ kind: 'five_hour', percentUsed: 40, resetsAt: hours(4) }, now)
   expect(fast?.runsOutInMs).toBe(1.5 * 3_600_000)
-  expect(paceText(fast)).toBe('at this pace, out in 2h')
+  expect(paceText(fast)).toBe('at this pace, out in 1h 30m')
   // Too early in the window, an unknown window, nothing used yet: no pace.
   expect(limitPace({ kind: 'seven_day', percentUsed: 1, resetsAt: hours(7 * 24 - 1) }, now)).toBeUndefined()
   expect(limitPace({ kind: 'spend_limit', percentUsed: 50, resetsAt: hours(2) }, now)).toBeUndefined()
