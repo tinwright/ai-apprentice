@@ -9,8 +9,9 @@ permissions:
   contents: read
 
 env:
-  # Claude Code, pinned, for claude plugin validate and claude plugin test.
-  CLAUDE_BIN: npx --yes @anthropic-ai/claude-code@2.1.292
+  # The latest Claude Code, for claude plugin validate and claude plugin test: mods use the newest
+  # engine APIs (themes, backdrops), which older versions don't have.
+  CLAUDE_BIN: npx --yes @anthropic-ai/claude-code@latest
 
 jobs:
   check:
