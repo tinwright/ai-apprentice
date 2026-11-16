@@ -1,0 +1,9 @@
+{
+  "name": "pixel-buddy",
+  "displayName": "Pixel Buddy",
+  "description": "A pixel buddy above your prompt that Claude designs from your description or a picture, then animates as it thinks, types, waves for approval and sleeps at night.",
+  "author": {
+    "name": "tinwright"
+  },
+  "types": "./types/index.d.ts"
+}

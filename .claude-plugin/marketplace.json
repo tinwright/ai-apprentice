@@ -32,6 +32,13 @@
       "description": "A sky behind the chat that follows the sun where you are, with a small sun or a moon in its real phase. It draws only the sky and leaves the space above the prompt free, so it sits alongside Clawd Buddy or any other mod there.",
       "category": "Mod",
       "tags": ["mod", "theme"]
+    },
+    {
+      "name": "pixel-buddy",
+      "source": "./plugins/pixel-buddy",
+      "description": "A pixel buddy above your prompt that Claude designs from your description or a picture, then animates as it thinks, types, waves for approval and sleeps at night.",
+      "category": "Mod",
+      "tags": ["mod", "companion", "fun"]
     }
   ]
 }
