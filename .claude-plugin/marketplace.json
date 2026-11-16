@@ -29,9 +29,9 @@
     {
       "name": "skywatch",
       "source": "./plugins/skywatch",
-      "description": "A sky behind the chat that follows the sun where you are, with a small sun or a moon in its real phase, and a little critter above the prompt that snoozes, dreams now and then, and wakes to point you at sessions that have finished.",
+      "description": "A sky behind the chat that follows the sun where you are, with a small sun or a moon in its real phase. It draws only the sky and leaves the space above the prompt free, so it sits alongside Clawd Buddy or any other mod there.",
       "category": "Mod",
-      "tags": ["mod", "theme", "sessions"]
+      "tags": ["mod", "theme"]
     }
   ]
 }
