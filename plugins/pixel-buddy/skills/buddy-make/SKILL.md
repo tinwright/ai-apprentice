@@ -16,10 +16,15 @@ still, without arms.
 - **Text** (`$ARGUMENTS`): pick the two or three features that make it recognisable at 12 pixels
   (ears, a hat, an antenna, a beak, a colour) and drop the rest.
 - **A picture** the person pasted: read its silhouette, its two to four main colours and its one
-  signature feature, and design an original character in that spirit.
+  signature feature, and draw that at pixel size.
 - Nothing given: ask in one line what they'd like, with two or three quick ideas.
-- Don't recreate logos, company mascots or well-known characters from games, films or brands,
-  even when asked. Offer an original character with the same mood instead.
+- **Fictional characters** (from books, films, shows, games, sketches) are fine as a fan-made
+  pixel homage: their silhouette, colours and signature item, under their name if the person asks.
+- **Well-known public and historical figures** are fine as a friendly caricature, built from
+  what they're known for (Einstein's hair, a famous hat). Keep it affectionate, never mocking. A
+  private person only if it's the person asking, or someone they say is happy to be drawn.
+- Don't draw logos, wordmarks or company mascots. Leave text out of the drawing too: at this size
+  it doesn't read.
 
 ## 2. Draw the body
 
