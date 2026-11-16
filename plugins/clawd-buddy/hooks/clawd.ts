@@ -151,6 +151,10 @@ export const STYLE = `
   .waveA{animation:waveA .9s steps(1) infinite}.waveB{animation:waveB .9s steps(1) infinite}
   @keyframes waveA{0%,49%{opacity:1}50%,100%{opacity:0}}
   @keyframes waveB{0%,49%{opacity:0}50%,100%{opacity:1}}
+  .key1{animation:key1 .4s steps(1) infinite}.key2{animation:key2 .4s steps(1) infinite}.key3{animation:key3 .4s steps(1) infinite}
+  @keyframes key1{0%,40.2%{opacity:1}40.3%,100%{opacity:0}}
+  @keyframes key2{0%,40.2%{opacity:0}40.3%,59.6%{opacity:1}59.7%,100%{opacity:0}}
+  @keyframes key3{0%,59.6%{opacity:0}59.7%,100%{opacity:1}}
   .foot{animation:foot .6s steps(1) infinite}
   @keyframes foot{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-1px)}}
 `
@@ -176,9 +180,12 @@ export function drawPose(pose: Pose, shades: boolean): string {
     case 'typing':
       // Crouched low, looking left at a side-on laptop (from the Figma kit).
       return at(
-        px(1, 1, 9, 4) + px(-1, 5, 11, 1) +
+        px(1, 1, 9, 4) + px(1, 5, 9, 1) +
           (shades ? px(1, 2, 2, 1, INK) + px(4, 2, 2, 1, INK) : g('blink', px(1, 2, 1, 1, INK) + px(5, 2, 1, 1, INK))) +
-          g('tapL', px(-1, 3, 2, 1, '#B96144') + px(-1, 4, 2, 1)) +
+          // Claw on the keys, three frames: shadow on top, then under the back claw, then under both.
+          g('key1', px(-1, 3, 2, 1, '#B96144') + px(-1, 4, 2, 2)) +
+          g('key2', px(-1, 3, 2, 2) + px(0, 5, 1, 1, '#B96144')) +
+          g('key3', px(-1, 3, 2, 2) + px(-1, 5, 2, 1, '#B96144')) +
           px(2, 6, 1, 1) + px(4, 6, 1, 1) + px(8, 6, 1, 1) + px(10, 6, 1, 1) +
           px(-4, 2, 1, 4, '#8A8A86') + px(-3, 6, 4, 1, '#8A8A86'),
       )
