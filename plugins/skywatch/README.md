@@ -21,6 +21,7 @@ It's for the Claude desktop app: the terminal has no backdrop or band to draw in
 - **The sky**: a backdrop behind the conversation for dawn, day, dusk and night, with the app's colours to match. The sun crosses the sky from sunrise to sunset; at night the moon does, lit in its real phase. It moves on every few minutes.
 - **The critter**: a small blocky orange critter sits above the prompt, asleep and breathing. About once every two minutes it dreams for a few seconds, of whatever suits the sky: sheep jumping a fence at night, a butterfly by day, a sunrise at dawn, fireflies at dusk.
 - **Finished sessions**: when another session in the app stops running, the critter wakes, scuttles side to side, and points at a line like "Fix the login page is ready for your eyes", with a link to that session. "Seen it" puts it back to sleep. A session stops counting once it runs again, leaves the app's list, or after three hours.
+- **Moods**: set the sky to morning, day, evening or night to stay there, whatever the time, or type `/skywatch night` (or `morning`, `day`, `evening`) to escape into one for now. `/skywatch live` follows the sun again. The moon keeps its real phase.
 - **`/skywatch`** says today's sunrise and sunset. **`/skywatch test`** wakes the critter with a pretend session, to see it walk.
 
 Everything moves with CSS animation, and holds still if your system asks for reduced motion.
@@ -29,6 +30,7 @@ Everything moves with CSS animation, and holds still if your system asks for red
 
 | Setting | Default | What it does |
 |---|---|---|
+| Sky | live | `live` follows the sun; `morning`, `day`, `evening` or `night` holds that sky. |
 | Latitude | none | Degrees north, negative for south. |
 | Longitude | none | Degrees east, negative for west. |
 

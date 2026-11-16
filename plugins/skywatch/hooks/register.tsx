@@ -3,7 +3,7 @@ import type { EngineInterface, Register, RenderChildren, Timer } from 'claude-co
 import { DREAMS, POINTING, sleeping } from './critter'
 import { lookFor } from './scene'
 import { flavour, newTracker, short, track, type SessionRow, type Tracker } from './sessions'
-import { clockTime, dayOfYear, type Period, type Place, placeFrom, skyNow, sunTimes } from './sky'
+import { clockTime, dayOfYear, MOODS, moodFrom, moodSky, type Period, type Place, placeFrom, skyNow, sunTimes } from './sky'
 
 // Skywatch: a sky behind the chat that follows the sun (dawn, day, dusk, night, with a small
 // sun or a moon in its real phase), and a little critter above the prompt that snoozes until
@@ -16,6 +16,8 @@ const KEEP_SCENES = 4 // backdrops kept for the app to draw: the current one and
 // What one load of the mod keeps track of. A reload starts afresh.
 type State = {
   place: Place | undefined
+  // A mood held instead of following the sun, from the settings or /skywatch.
+  mood: Period | undefined
   sessions: Tracker
   scenes: Map<string, string>
   current: string | undefined
@@ -25,7 +27,8 @@ type State = {
 }
 
 async function refreshSky($: EngineInterface, s: State): Promise<void> {
-  const sky = skyNow(new Date(await $.clock.now()), s.place)
+  const d = new Date(await $.clock.now())
+  const sky = s.mood ? moodSky(s.mood, d, s.place) : skyNow(d, s.place)
   if (sky.period !== s.period) {
     s.period = sky.period
     $.ui.invalidate('ui.render') // a new sky, a new dream
@@ -60,6 +63,7 @@ async function checkSessions($: EngineInterface, s: State): Promise<void> {
 export const register: Register = (on, options) => {
   const s: State = {
     place: placeFrom(options),
+    mood: moodFrom(options.sky),
     sessions: newTracker(),
     scenes: new Map(),
     current: undefined,
@@ -73,7 +77,7 @@ export const register: Register = (on, options) => {
     s.current = undefined
     await $.command.register({
       name: 'skywatch',
-      description: "Skywatch: today's sunrise and sunset. /skywatch test wakes the critter with a pretend finished session",
+      description: "Skywatch: today's sunrise and sunset. /skywatch morning, day, evening or night holds that sky; /skywatch live follows the sun again; /skywatch test wakes the critter",
     })
     await refreshSky($, s)
     await checkSessions($, s)
@@ -86,15 +90,23 @@ export const register: Register = (on, options) => {
 
   on('command.run', { command: 'skywatch' }, async ($, e) => {
     const now = await $.clock.now()
-    if (e.args.trim() === 'test') {
+    const arg = e.args.trim().toLowerCase()
+    const mood = moodFrom(arg)
+    if (mood || arg === 'live') {
+      s.mood = mood
+      await refreshSky($, s)
+      return { text: mood ? `Holding the sky at ${arg}. /skywatch live follows the sun again.` : 'Following the sun again.' }
+    }
+    if (arg === 'test') {
       s.sessions.waiting = [{ id: 'test', title: 'A pretend session', since: now }]
       $.ui.invalidate('ui.render')
       return { text: 'Woke the critter. "Seen it" puts him back to sleep.' }
     }
-    if (!s.place) return { text: 'No location set, so the sky runs 06:00 to 18:00. Set a latitude and longitude in /config for real sunrise and sunset. /skywatch test wakes the critter.' }
+    const held = s.mood ? ` The sky is held at ${Object.keys(MOODS).find(k => MOODS[k] === s.mood)}; /skywatch live follows the sun again.` : ''
+    if (!s.place) return { text: `No location set, so the sky runs 06:00 to 18:00. Set a latitude and longitude in /config for real sunrise and sunset.${held} /skywatch test wakes the critter.` }
     const d = new Date(now)
     const { rise, set } = sunTimes(dayOfYear(d), -d.getTimezoneOffset() / 60, s.place)
-    return { text: `Sunrise ${clockTime(rise)}, sunset ${clockTime(set)}. /skywatch test wakes the critter.` }
+    return { text: `Sunrise ${clockTime(rise)}, sunset ${clockTime(set)}.${held} /skywatch test wakes the critter.` }
   })
 
   on('ui.render', { component: 'Backdrop' }, ($, e, next) => {

@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { arc, clockTime, moonPhase, periodAt, placeFrom, sunTimes } from './sky'
+import { arc, clockTime, moodFrom, moodSky, moonPhase, periodAt, placeFrom, sunTimes } from './sky'
 
 const NEW_YORK = { lat: 40.71, lon: -74.01 }
 
@@ -44,6 +44,18 @@ test('the moon is full and new on the right nights', () => {
   expect(Math.abs(moonPhase(new Date(Date.UTC(2025, 0, 13, 22, 27))) - 0.5)).toBeLessThan(0.03)
   const fresh = moonPhase(new Date(Date.UTC(2025, 0, 29, 12, 36)))
   expect(Math.min(fresh, 1 - fresh)).toBeLessThan(0.03)
+})
+
+test('a mood holds its sky, with the real moon', () => {
+  expect(moodFrom('evening')).toBe('dusk')
+  expect(moodFrom(' Morning ')).toBe('dawn')
+  expect(moodFrom('live')).toBeUndefined()
+  expect(moodFrom(3)).toBeUndefined()
+  const d = new Date(Date.UTC(2025, 0, 13, 22, 27))
+  const night = moodSky('night', d)
+  expect(night.period).toBe('night')
+  expect(night.phase).toBe(moonPhase(d))
+  expect(moodSky('day', d, { lat: -33.9, lon: 151.2 }).south).toBe(true)
 })
 
 test('a place needs both halves, in range', () => {

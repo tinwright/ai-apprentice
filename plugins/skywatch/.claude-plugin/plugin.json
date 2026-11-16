@@ -6,6 +6,19 @@
     "name": "Sam Thomas"
   },
   "userConfig": {
+    "sky": {
+      "type": "string",
+      "title": "Sky",
+      "description": "live follows the sun where you are. morning, day, evening or night holds that sky all the time, to escape into a mood. /skywatch night and the like switch it for now.",
+      "options": [
+        "live",
+        "morning",
+        "day",
+        "evening",
+        "night"
+      ],
+      "default": "live"
+    },
     "latitude": {
       "type": "number",
       "title": "Latitude",
