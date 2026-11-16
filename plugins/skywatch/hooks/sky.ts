@@ -79,7 +79,7 @@ export function moodSky(period: Period, d: Date, place?: Place): Sky {
 
 // An arc low at the sides and high in the middle, kept to the top of the window.
 export function arc(t: number): [number, number] {
-  return [180 + t * 1240, 470 - Math.sin(Math.PI * t) * 360]
+  return [180 + t * 1240, 500 - Math.sin(Math.PI * t) * 300]
 }
 
 // "07:23"

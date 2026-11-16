@@ -39,3 +39,11 @@ test('each look names its scene and paints light by day, dark by night', () => {
   expect(night.key).toBe('night-30')
   expect(day.source).not.toBe(night.source)
 })
+
+test('the night shows its stars: some big ones glow, and the glass is thin', () => {
+  const night = lookFor({ period: 'night', t: 0.5, phase: 0 })
+  expect(night.source).toContain('<filter id="starglow"')
+  expect(night.source).toContain('filter="url(#starglow)"')
+  expect(night.args.backdrop).toMatchObject({ glass: { blur: 2, opacity: 0.35 } })
+  expect(lookFor({ period: 'day', t: 0.5, phase: 0 }).args.backdrop).toMatchObject({ glass: { blur: 10 } })
+})
