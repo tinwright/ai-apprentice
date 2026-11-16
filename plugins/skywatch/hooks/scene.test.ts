@@ -15,6 +15,17 @@ test('every scene is an SVG well under the backdrop limit, and still for reduced
   }
 })
 
+test('the sun and moon are drawn over the sky, not hidden under it', () => {
+  for (const period of PERIODS) {
+    const source = scene({ period, t: 0.5, phase: 0.3 })
+    const sky = source.indexOf('fill="url(#sky)"')
+    const disc = source.search(/<circle cx="[\d.]+" cy="[\d.]+" r="30" fill="#/)
+    expect(sky).toBeGreaterThan(-1)
+    expect(disc).toBeGreaterThan(sky)
+    expect(source.slice(source.indexOf('</defs>'))).not.toContain('<defs>')
+  }
+})
+
 test('the moon\'s shadow sits on the other side in the southern hemisphere', () => {
   const shadow = (south: boolean) => /<circle cx="([\d.]+)" cy="[\d.]+" r="30" fill="black"/.exec(scene({ period: 'night', t: 0.5, phase: 0.25, south }))?.[1]
   expect(Number(shadow(false))).toBeLessThan(800)
