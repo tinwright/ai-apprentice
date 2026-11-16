@@ -117,6 +117,7 @@ export function mouth(k: Compiled, kind: Mouth): string {
   if (!k.mouth || kind === 'none') return ''
   const [x, y] = k.mouth
   if (kind === 'o') return px(x, y, 1, 1, k.ink)
+  if (!k.smiles) return ''
   return px(x - 1, y, 1, 1, k.ink) + px(x, y + 1, 1, 1, k.ink) + px(x + 1, y, 1, 1, k.ink)
 }
 

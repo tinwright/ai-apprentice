@@ -69,7 +69,7 @@ export function portrait(k: Compiled, pose: Pose, shades: boolean): Run[][] | un
   if (k.mouth) {
     const [x, y] = k.mouth
     if (pose === 'oops') set(x, y, k.ink)
-    else if (SMILE.has(pose)) for (const [mx, my] of [[x - 1, y], [x, y + 1], [x + 1, y]] as Point[]) set(mx, my, k.ink)
+    else if (SMILE.has(pose) && k.smiles) for (const [mx, my] of [[x - 1, y], [x, y + 1], [x + 1, y]] as Point[]) set(mx, my, k.ink)
   }
 
   const out: Run[][] = []

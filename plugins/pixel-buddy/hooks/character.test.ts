@@ -92,6 +92,29 @@ test('the drawing uses the character\'s own colours and its arms come from its h
   expect(scene(compile(MOCHI), 'idle', false)).toContain('x="8" y="6" width="1" height="1" fill="#8B5E3C"')
 })
 
+test('a smile shows with squinting eyes only when a clear row keeps them apart', () => {
+  const smile = (c: Character) => scene(compile(c), 'proud', false).match(/fill="#1F1E1D"/g)?.length ?? 0
+  // Bolt's mouth is right under its eyes: the "^ ^" alone says it.
+  expect(smile(BOLT)).toBe(smile({ ...BOLT, anchors: { ...BOLT.anchors, mouth: undefined } }))
+  const roomy = withBody([
+    '.ddddddddd.',
+    'dsssssssssd',
+    'dsssssssssd',
+    'dsssssssssd',
+    'dsssssssssd',
+    'dsssssssssd',
+    'dsssssssssd',
+    '.ddddddddd.',
+    '..dgggggd..',
+    '..dgggggd..',
+    '..dd...dd..',
+    '..dd...dd..',
+  ], { palette: { d: '#2F5D62', s: '#DDEFEA', g: '#4FA3A5' } })
+  const lowMouth = { ...roomy, anchors: { ...BOLT.anchors, eyes: [[3, 2], [7, 2]] as [number, number][], mouth: [5, 6] as [number, number], head: [5, 0] as [number, number] } }
+  expect(validate(lowMouth).errors).toEqual([])
+  expect(smile(lowMouth)).toBe(smile({ ...lowMouth, anchors: { ...lowMouth.anchors, mouth: undefined } }) + 3)
+})
+
 test('a tall buddy is drawn with smaller pixels, so the band stays the same height', () => {
   const tall = scene(compile(withBody([...BOLT.body, ...BOLT.body.slice(-4)])), 'idle', false)
   const height = (svg: string) => Number(/height="([\d.]+)"/.exec(svg)?.[1])

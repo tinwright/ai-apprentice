@@ -48,7 +48,9 @@ from the top-left pixel, starting at 0.
   body.
 - `hands`: a body pixel on the left edge and one on the right edge, at shoulder height, where the
   arms attach and props are held: from row 1 down to two rows above the bottom row.
-- `mouth` (optional): the middle of a small smile, below the eyes.
+- `mouth` (optional): the middle of a small smile, below the eyes. The smile shows only with a
+  clear row between it and the eyes (mouth row at least 3 below the eyes' top row); closer, the
+  mouth shows only as an "o" when startled, and the squinting eyes alone make it look happy.
 - `head` (optional): the top of the head, where a "!" pops up.
 - `type`: `biped` (two-pixel arms, the default), `critter` (one-pixel paws) or `blob` (no arms
   until it gestures).

@@ -225,6 +225,8 @@ export type Compiled = {
   ink: string
   glyph: string
   type: 'biped' | 'critter' | 'blob'
+  /** Whether a smile fits under squinting eyes with a clear row between (else the eyes alone say it). */
+  smiles: boolean
   /** The colour at each hand, for its arm. */
   armL: string
   armR: string
@@ -259,6 +261,7 @@ export function compile(c: Character): Compiled {
     ink: c.ink ?? DEFAULT_INK,
     glyph: c.glyph ?? DEFAULT_GLYPH,
     type: c.type ?? 'biped',
+    smiles: c.anchors.mouth !== undefined && c.anchors.mouth[1] >= Math.max(...c.anchors.eyes.map(e => e[1])) + 3,
     armL: cell(left[0], left[1]) as string,
     armR: cell(right[0], right[1]) as string,
   }
