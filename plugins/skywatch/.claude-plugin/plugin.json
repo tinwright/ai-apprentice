@@ -1,0 +1,24 @@
+{
+  "name": "skywatch",
+  "displayName": "Skywatch",
+  "description": "A sky behind the chat that follows the sun where you are, with a small sun or a moon in its real phase, and a little critter above the prompt that snoozes, dreams now and then, and wakes to point you at sessions that have finished.",
+  "author": {
+    "name": "Sam Thomas"
+  },
+  "userConfig": {
+    "latitude": {
+      "type": "number",
+      "title": "Latitude",
+      "description": "Where you are, in degrees north (negative for south), for real sunrise and sunset. Two decimal places is plenty. Leave it and longitude empty for a plain 06:00 to 18:00 day.",
+      "min": -90,
+      "max": 90
+    },
+    "longitude": {
+      "type": "number",
+      "title": "Longitude",
+      "description": "Where you are, in degrees east (negative for west).",
+      "min": -180,
+      "max": 180
+    }
+  }
+}

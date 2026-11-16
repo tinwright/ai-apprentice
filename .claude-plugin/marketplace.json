@@ -25,6 +25,13 @@
       "description": "A little pixel Clawd above your prompt who reacts to what Claude is doing: thinks, types, waves for approval, sips coffee in the morning and sleeps at night.",
       "category": "Mod",
       "tags": ["mod", "companion", "fun"]
+    },
+    {
+      "name": "skywatch",
+      "source": "./plugins/skywatch",
+      "description": "A sky behind the chat that follows the sun where you are, with a small sun or a moon in its real phase, and a little critter above the prompt that snoozes, dreams now and then, and wakes to point you at sessions that have finished.",
+      "category": "Mod",
+      "tags": ["mod", "theme", "sessions"]
     }
   ]
 }
