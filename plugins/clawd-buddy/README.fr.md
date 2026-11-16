@@ -17,7 +17,7 @@ Dans Claude Code, ajoutez une fois la place de marché tinwright, puis installez
 
 Clawd apparaît tout seul au-dessus de la zone de saisie dans l'application de bureau (et sous forme d'une ligne d'état dans le terminal). Tapez `/clawd-demo` pour voir ses 18 humeurs, trois secondes chacune. Une courte légende à côté de lui indique ce qu'il fait.
 
-**Pendant que Claude travaille** : une bulle de pensée quand il réfléchit, un petit clavier quand il lance des commandes, un bloc-notes quand il modifie des fichiers, une loupe quand il cherche, et un mini Clawd à côté de lui pour chaque agent auxiliaire.
+**Pendant que Claude travaille** : une bulle de pensée quand il réfléchit, un petit clavier quand il lance des commandes, un bloc-notes quand il modifie des fichiers, une loupe quand il cherche, et un mini Clawd à côté de lui pour chaque agent auxiliaire, y compris ceux d'un workflow. Chaque pose dure un instant, pour qu'il ne clignote pas entre deux appels d'outils rapides.
 
 **Selon le résultat** : de grands yeux et un « ! » quand une commande échoue, un « ta-da » quand les tests passent ou qu'une longue tâche se termine, un grand étirement après une très longue tâche, un pouce levé après un `git push`.
 
