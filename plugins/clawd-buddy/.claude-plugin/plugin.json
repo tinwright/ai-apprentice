@@ -1,0 +1,9 @@
+{
+  "name": "clawd-buddy",
+  "displayName": "Clawd Buddy",
+  "description": "A little pixel Clawd above your prompt who reacts to what Claude is doing: thinks, types, waves for approval, sips coffee in the morning and sleeps at night.",
+  "author": {
+    "name": "tinwright"
+  },
+  "types": "./types/index.d.ts"
+}
