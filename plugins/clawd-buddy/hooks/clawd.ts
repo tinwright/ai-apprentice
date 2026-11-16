@@ -55,9 +55,9 @@ export const PUSH_RE = /\bgit\s+push\b/
 
 // ── Pixel art ──────────────────────────────────────────────────────────────
 export const U = 3.5 // px per pixel
-export const W = 28
+export const W = 32
 export const H = 13
-export const OX = 8
+export const OX = 12
 export const OY = 5 // Clawd's top-left in the scene
 export const BODY = '#D97757'
 export const INK = '#1F1E1D'
@@ -97,9 +97,9 @@ export function eyes(kind: Eyes, shades: boolean): string {
 
 export type Parts = { eyes?: Eyes; armL?: string; armR?: string; legs?: string; shades?: boolean }
 
-export const ARM_L = px(0, 2, 1, 2)
-export const ARM_R = px(10, 2, 1, 2)
-export const LEGS = px(2, 5, 1, 2) + px(4, 5, 1, 2) + px(6, 5, 1, 2) + px(8, 5, 1, 2)
+export const ARM_L = px(-1, 2, 2, 2)
+export const ARM_R = px(10, 2, 2, 2)
+export const LEGS = px(1, 5, 1, 2) + px(3, 5, 1, 2) + px(7, 5, 1, 2) + px(9, 5, 1, 2)
 
 export function clawd(o: Parts = {}): string {
   return px(1, 0, 9, 5) + (o.armL ?? ARM_L) + (o.armR ?? ARM_R) + (o.legs ?? LEGS) + eyes(o.eyes ?? 'open', o.shades ?? false)
@@ -170,24 +170,28 @@ export function drawPose(pose: Pose, shades: boolean): string {
         `<text class="z" x="${OX + 10}" y="${OY}">z</text><text class="z z2" x="${OX + 10}" y="${OY}">z</text><text class="z z3" x="${OX + 10}" y="${OY}">z</text>`
       )
     case 'coffee':
-      return at(clawd({ armR: '', shades }) + g('sip', ARM_R + `<g transform="translate(11 1)">${mug()}${steam()}</g>`))
+      return at(clawd({ armR: '', shades }) + g('sip', ARM_R + `<g transform="translate(12 1)">${mug()}${steam()}</g>`))
     case 'lunch':
-      return at(clawd({ armR: '', shades }) + g('sip', ARM_R + `<g transform="translate(11 0)">${sandwich()}</g>`))
+      return at(clawd({ armR: '', shades }) + g('sip', ARM_R + `<g transform="translate(12 0)">${sandwich()}</g>`))
     case 'typing':
+      // Crouched low, looking left at a side-on laptop (from the Figma kit).
       return at(
-        clawd({ eyes: 'down', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R), shades }) +
-          px(0, 4, 11, 1, '#4A4A48') + px(1, 4, 1, 1, '#8A8A86') + px(3, 4, 1, 1, '#8A8A86') + px(5, 4, 1, 1, '#8A8A86') + px(7, 4, 1, 1, '#8A8A86') + px(9, 4, 1, 1, '#8A8A86'),
+        px(1, 1, 9, 4) + px(-1, 5, 11, 1) +
+          (shades ? px(1, 2, 2, 1, INK) + px(4, 2, 2, 1, INK) : g('blink', px(1, 2, 1, 1, INK) + px(5, 2, 1, 1, INK))) +
+          g('tapL', px(-1, 3, 2, 1, '#B96144') + px(-1, 4, 2, 1)) +
+          px(2, 6, 1, 1) + px(4, 6, 1, 1) + px(8, 6, 1, 1) + px(10, 6, 1, 1) +
+          px(-4, 2, 1, 4, '#8A8A86') + px(-3, 6, 4, 1, '#8A8A86'),
       )
     case 'writing':
       return at(
         clawd({ eyes: 'down', armR: '', shades }) +
-          px(11, 0, 4, 5, '#F4EFE6') + px(12, 1, 2, 1, '#B9B4AC') + px(12, 3, 2, 1, '#B9B4AC') +
-          g('scribble', ARM_R + px(11, 1, 1, 2, GOLD) + px(11, 3, 1, 1, INK)),
+          px(12, 0, 4, 5, '#F4EFE6') + px(13, 1, 2, 1, '#B9B4AC') + px(13, 3, 2, 1, '#B9B4AC') +
+          g('scribble', ARM_R + px(12, 1, 1, 2, GOLD) + px(12, 3, 1, 1, INK)),
       )
     case 'searching':
       return at(
         px(1, 0, 9, 5) + ARM_L + LEGS + (shades ? eyes('open', true) : g('look', px(3, 1, 1, 2, INK) + px(7, 1, 1, 2, INK))) +
-          g('scan', ARM_R + px(11, 2, 1, 1, BROWN) + px(11, -1, 3, 1, '#C8CDD8') + px(11, 1, 3, 1, '#C8CDD8') + px(11, 0, 1, 1, '#C8CDD8') + px(13, 0, 1, 1, '#C8CDD8') + px(12, 0, 1, 1, '#BFE3F2')),
+          g('scan', ARM_R + px(12, 2, 1, 1, BROWN) + px(12, -1, 3, 1, '#C8CDD8') + px(12, 1, 3, 1, '#C8CDD8') + px(12, 0, 1, 1, '#C8CDD8') + px(14, 0, 1, 1, '#C8CDD8') + px(13, 0, 1, 1, '#BFE3F2')),
       )
     case 'thinking':
       return at(
@@ -198,21 +202,21 @@ export function drawPose(pose: Pose, shades: boolean): string {
     case 'oops':
       return at(g('startle', clawd({ eyes: 'wide' }) + px(5, -5, 1, 2, RED) + px(5, -2, 1, 1, RED)))
     case 'proud':
-      return at(g('sway', clawd({ eyes: 'happy', armL: px(0, 1, 1, 1) + px(-1, 0, 1, 1), armR: px(10, 1, 1, 1) + px(11, 0, 1, 1) })))
+      return at(g('sway', clawd({ eyes: 'happy', armL: px(-1, 1, 2, 1) + px(-2, 0, 1, 1), armR: px(10, 1, 2, 1) + px(12, 0, 1, 1) })))
     case 'stretch':
       return at(g('stretch', clawd({ eyes: 'closed', armL: px(0, -3, 1, 4), armR: px(10, -3, 1, 4) })))
     case 'thumbs':
-      return at(g('startle', clawd({ eyes: 'happy', armR: ARM_R + px(11, 2, 2, 2) + px(11, 0, 1, 2) })))
+      return at(g('startle', clawd({ eyes: 'happy', armR: ARM_R + px(11, 0, 1, 2) })))
     case 'sweep':
       return at(
         clawd({ eyes: 'down', armR: '' }) +
-          g('sweep', px(10, 2, 2, 1) + px(12, -1, 1, 6, BROWN) + px(11, 5, 3, 2, '#E3B36B')) +
-          px(15, 6, 1, 1, GRAY, 'dust') + px(9, 6, 1, 1, GRAY, 'dust'),
+          g('sweep', px(10, 2, 3, 1) + px(13, -1, 1, 6, BROWN) + px(12, 5, 3, 2, '#E3B36B')) +
+          px(16, 6, 1, 1, GRAY, 'dust') + px(10, 6, 1, 1, GRAY, 'dust'),
       )
     case 'wave':
-      return at(clawd({ armR: g('waveA', px(10, -1, 1, 3)) + g('waveB', px(10, 1, 1, 1) + px(11, 0, 1, 1) + px(12, -1, 1, 1)), shades }))
+      return at(clawd({ armR: g('waveA', px(10, 1, 2, 2) + px(11, -1, 1, 2)) + g('waveB', px(10, 1, 2, 2) + px(12, -1, 1, 2)), shades }))
     case 'tap':
-      return at(clawd({ eyes: 'flat', legs: px(2, 5, 1, 2) + px(4, 5, 1, 2) + px(6, 5, 1, 2) + g('foot', px(8, 5, 1, 2)) }))
+      return at(clawd({ eyes: 'flat', legs: px(1, 5, 1, 2) + px(3, 5, 1, 2) + px(7, 5, 1, 2) + g('foot', px(9, 5, 1, 2)) }))
     default:
       return at(g('bob', clawd({ shades })))
   }
@@ -223,7 +227,7 @@ export function scene(pose: Pose, shades: boolean, helperCount: number): string 
   const minis =
     pose === 'sleep'
       ? ''
-      : [21.5, 1]
+      : [24.5, 0.5]
           .slice(0, Math.min(helperCount, 2))
           .map((x, i) => `<g transform="translate(${x} ${OY + 3.5}) scale(.5)">${g(i ? 'bob' : 'bob2', clawd({ eyes: 'down', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R) }))}</g>`)
           .join('')
