@@ -17,6 +17,13 @@ export const IMPATIENT_AFTER_MS = 60_000 // tap his foot after a question waits 
 export const PROUD_TURN_MS = 90_000 // a turn this long earns a ta-da
 export const STRETCH_TURN_MS = 5 * 60_000 // a turn this long earns a stretch
 
+// Smoothing: how long poses hold so Clawd doesn't flicker between them.
+export const HOLD_MS = 1000 // a finished tool's pose stays this long before he falls back
+export const MIN_POSE_MS = 600 // a new activity shows at least this long before another replaces it
+export const MOMENT_MIN_MS = 1200 // a reaction shows at least this long before new work ends it
+export const OOPS_COOLDOWN_MS = 8000 // at most one "oops!" per this long
+export const HELPER_STALE_MS = 10 * 60_000 // a workflow agent unseen this long is dropped
+
 export function phaseAt(ms: number): Phase {
   const d = new Date(ms)
   const m = d.getHours() * 60 + d.getMinutes()
@@ -138,8 +145,8 @@ export const STYLE = `
   @keyframes look{0%,49%{transform:translateX(1px)}50%,100%{transform:translateX(-1px)}}
   .d1,.d2,.d3{opacity:0;animation:dot 1.8s steps(1) infinite}.d2{animation-delay:.3s}.d3{animation-delay:.6s}
   @keyframes dot{0%,19%{opacity:0}20%,85%{opacity:1}86%,100%{opacity:0}}
-  .startle{animation:startle .5s steps(1) 2}
-  @keyframes startle{0%,49%{transform:translateY(-1px)}50%,100%{transform:translateY(0)}}
+  .startle{animation:startle 1.6s steps(1) infinite}
+  @keyframes startle{0%,14%{transform:translateY(-1px)}15%,29%{transform:translateY(0)}30%,44%{transform:translateY(-1px)}45%,100%{transform:translateY(0)}}
   .sway{animation:sway 1.2s steps(1) infinite}
   @keyframes sway{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(1px)}}
   .stretch{transform-origin:50% 100%;transform-box:fill-box;animation:stretch 2.6s ease-in-out infinite}
@@ -218,18 +225,27 @@ export function drawPose(pose: Pose, shades: boolean): string {
   }
 }
 
-export function scene(pose: Pose, shades: boolean, helperCount: number): string {
+/** Clawd alone. Helpers are a separate drawing, so a helper coming or going doesn't restart his animations. */
+export function scene(pose: Pose, shades: boolean): string {
   const ground = `<rect x="2" y="${OY + 7}" width="${W - 4}" height="1" fill="${INK}" opacity=".18"/>`
-  const minis =
-    pose === 'sleep'
-      ? ''
-      : [21.5, 1]
-          .slice(0, Math.min(helperCount, 2))
-          .map((x, i) => `<g transform="translate(${x} ${OY + 3.5}) scale(.5)">${g(i ? 'bob' : 'bob2', clawd({ eyes: 'down', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R) }))}</g>`)
-          .join('')
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W * U}" height="${H * U}" shape-rendering="crispEdges">` +
-    `<style>${STYLE}</style>${ground}${drawPose(pose, shades)}${minis}</svg>`
+    `<style>${STYLE}</style>${ground}${drawPose(pose, shades)}</svg>`
+  )
+}
+
+export const MINI_W = 13
+
+/** Up to two mini Clawds typing away, one per helper agent. */
+export function minis(helperCount: number): string {
+  const ground = `<rect x="0" y="${OY + 7}" width="${MINI_W - 1}" height="1" fill="${INK}" opacity=".18"/>`
+  const drawn = [0.5, 6.5]
+    .slice(0, Math.min(helperCount, 2))
+    .map((x, i) => `<g transform="translate(${x} ${OY + 3.5}) scale(.5)">${g(i ? 'bob' : 'bob2', clawd({ eyes: 'down', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R) }))}</g>`)
+    .join('')
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${MINI_W} ${H}" width="${MINI_W * U}" height="${H * U}" shape-rendering="crispEdges">` +
+    `<style>${STYLE}</style>${ground}${drawn}</svg>`
   )
 }
 
