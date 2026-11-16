@@ -1,9 +1,9 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register, RenderInput } from 'claude-code'
 
-import type { Activity, Character, Moment, Waiting } from '../types'
+import type { Activity, Character, Intro, Moment, Waiting } from '../types'
 import {
-  CAPTION, COFFEE_BREAK_MS, WILD_MS, DEMO_MS, DOZE_AFTER_MS, HELPER_STALE_MS,
+  CAPTION, COFFEE_BREAK_MS, HELLO_MS, INTRO_DANCE_MS, WILD_MS, greetingName, helloLine, DEMO_MS, DOZE_AFTER_MS, HELPER_STALE_MS,
   HOLD_MS, IMPATIENT_AFTER_MS, JUMP_MS, MIN_POSE_MS, MOMENT_MIN_MS, OOPS_COOLDOWN_MS, PROUD_TURN_MS, PUSH_RE,
   STRETCH_TURN_MS, TEST_RE,
   activityFor, altFor, choosePose, demoFor, fridayAt, isPing, phaseAt,
@@ -21,6 +21,8 @@ const phase = atom({ plugin: 'pixel-buddy', key: 'phase' } as const, 'awake')
 const isJumping = atom({ plugin: 'pixel-buddy', key: 'isJumping' } as const, false)
 const isSipping = atom({ plugin: 'pixel-buddy', key: 'isSipping' } as const, false)
 const isWild = atom({ plugin: 'pixel-buddy', key: 'isWild' } as const, false)
+const intro = atom({ plugin: 'pixel-buddy', key: 'intro' } as const, 'none' as Intro)
+const personName = atom({ plugin: 'pixel-buddy', key: 'personName' } as const, 'there')
 const activity = atom({ plugin: 'pixel-buddy', key: 'activity' } as const, 'none')
 const helpers = atom({ plugin: 'pixel-buddy', key: 'helpers' } as const, 0)
 const moment = atom({ plugin: 'pixel-buddy', key: 'moment' } as const, 'none')
@@ -93,6 +95,7 @@ let stopTicker: (() => void) | undefined
 let stopJump: (() => void) | undefined
 let stopCoffee: (() => void) | undefined
 let stopWild: (() => void) | undefined
+let stopIntro: (() => void) | undefined
 let stopQuestion: (() => void) | undefined
 let lastActive = 0
 let turnStartedAt = 0
@@ -211,6 +214,20 @@ async function touch($: EngineInterface) {
   await update($, isDozing, prev => (prev ? false : prev))
 }
 
+// A new buddy says hello for a moment, then dances a little.
+async function introduce($: EngineInterface) {
+  stopIntro?.()
+  stopDemo?.()
+  await update($, demoStep, () => -1)
+  await update($, intro, () => 'hello')
+  stopIntro = $.clock.after(HELLO_MS, () => {
+    void update($, intro, () => 'dance')
+    stopIntro = $.clock.after(INTRO_DANCE_MS, () => {
+      void update($, intro, () => 'none')
+    }).cancel
+  }).cancel
+}
+
 async function goWild($: EngineInterface) {
   stopWild?.()
   await update($, isWild, () => true)
@@ -243,6 +260,7 @@ export const register: Register = on => {
     await $.command.register({ name: 'buddy-use', description: 'List your buddies, or switch to one: /buddy-use <name>' })
     await $.command.register({ name: 'buddy-forget', description: 'Delete a saved buddy: /buddy-forget <name>' })
     await $.command.register({ name: 'buddy-jump', description: 'Make your buddy jump as if a session just pinged you' })
+    await $.command.register({ name: 'buddy-hello', description: 'Your buddy introduces itself again: /buddy-hello [your name]' })
     await $.command.register({ name: 'buddy-dance', description: 'Make your buddy dance when idle, or stop: /buddy-dance [on|off]' })
     await $.command.register({ name: 'buddy-flarhgunnstow', description: 'Your buddy dances like nobody is watching, for 30 seconds' })
     await $.command.register({ name: 'buddy-coffee', description: 'Give your buddy a cup of coffee for a little while' })
@@ -264,6 +282,11 @@ export const register: Register = on => {
     stopJump?.()
     stopCoffee?.()
     stopWild?.()
+    stopIntro?.()
+    await update($, intro, () => 'none')
+    const login = await $.env.get('USER').catch(() => undefined)
+    const greet = greetingName(await $.store.get('personName').catch(() => undefined), login)
+    await update($, personName, () => greet)
     await update($, isJumping, () => false)
     await update($, isSipping, () => false)
     await update($, isWild, () => false)
@@ -296,6 +319,16 @@ export const register: Register = on => {
     return { text: `${(await read($, character)).name} is jumping!` }
   })
 
+  on('command.run', { command: 'buddy-hello' }, async ($, e) => {
+    const given = (e.args ?? '').trim().slice(0, 40)
+    if (given) {
+      await $.store.set('personName', given)
+      await update($, personName, () => given)
+    }
+    await introduce($)
+    return { text: given ? `Nice to meet you, ${given}!` : `${(await read($, character)).name} says hi 👋` }
+  })
+
   on('command.run', { command: 'buddy-dance' }, async ($, e) => {
     const r = setDance(await loadLibrary($), e.args ?? '')
     if (r.library) await saveLibrary($, r.library)
@@ -325,12 +358,17 @@ export const register: Register = on => {
     const r = use(lib, name)
     if (!r.library) return { text: r.message }
     await saveLibrary($, r.library)
+    await introduce($)
     return { text: r.message }
   })
 
   on('command.run', { command: 'buddy-forget' }, async ($, e) => {
     const r = forget(await loadLibrary($), (e.args ?? '').trim())
-    if (r.library) await saveLibrary($, r.library)
+    if (r.library) {
+      stopIntro?.()
+      await update($, intro, () => 'none')
+      await saveLibrary($, r.library)
+    }
     return { text: r.message }
   })
 
@@ -339,7 +377,8 @@ export const register: Register = on => {
     const r = save(await loadLibrary($), (e as { character?: unknown }).character)
     if (!r.library) return { deny: r.message }
     await saveLibrary($, r.library)
-    await startDemo($)
+    if (r.isNew) await introduce($)
+    else await startDemo($)
     return { result: r.message }
   })
 
@@ -533,12 +572,19 @@ export const register: Register = on => {
     // No jumping with hot coffee (or lunch) in hand.
     const moved: Pose = base === 'idle' && k.character.dance === true ? 'dance' : base
     const wild = (await read($, isWild)) && moved !== 'wave' && moved !== 'tap'
-    const pose: Pose = wild ? 'wild' : pinged && moved !== 'coffee' && moved !== 'lunch' ? 'jump' : moved
+    // An introduction comes before anything but a person being asked something.
+    const stage = await read($, intro)
+    const introducing = stage !== 'none' && base !== 'wave' && base !== 'tap'
+    const pose: Pose = introducing
+      ? stage === 'hello' ? 'wave' : 'dance'
+      : wild ? 'wild' : pinged && moved !== 'coffee' && moved !== 'lunch' ? 'jump' : moved
     const shades = await read($, isFriday)
     const helperCount = await read($, helpers)
     const showHelpers = helperCount > 0 && pose !== 'sleep'
 
-    let caption = pinged && !wild ? CAPTION.jump : CAPTION[pose]
+    let caption = introducing
+      ? stage === 'hello' ? helloLine(await read($, personName), name) : 'dancing ♪'
+      : pinged && !wild ? CAPTION.jump : CAPTION[pose]
     if (!caption && shades) caption = "it's Friday 😎"
     if (base === 'sleep' && (await read($, isDozing)) && (await read($, phase)) !== 'sleep') caption = 'dozing…'
     if (showHelpers) caption = [caption, `+ ${helperCount} helper${helperCount > 1 ? 's' : ''}`].filter(Boolean).join(' · ')

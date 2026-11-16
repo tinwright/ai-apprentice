@@ -6,6 +6,7 @@ import { CLAWD, MAX_COLOURS, compile, contrast, validate } from './character'
 import { POSES, minis, scene } from './draw'
 import { MAX_SAVED, currentOf as currentOfLib, forget, load, save, setDance, use } from './library'
 import { BOLT, MOCHI } from './samples'
+import { HELLO_MS, INTRO_DANCE_MS, greetingName } from './buddy'
 import { portrait } from './terminal'
 import type { Run } from './terminal'
 
@@ -192,14 +193,16 @@ const TERMINAL_BAND = {
 type Engine = Parameters<TestBody>[0]
 type On = Parameters<TestBody>[1]
 
-async function start($: Engine, on: On, stored?: Record<string, unknown>) {
-  mock.clock(on, { now: new Date(2026, 10, 16, 15).getTime() })
+async function start($: Engine, on: On, stored?: Record<string, unknown>, env: Record<string, string> = {}) {
+  mock.env(on, env)
+  const clock = mock.clock(on, { now: new Date(2026, 10, 16, 15).getTime() })
   mock.store(on, stored)
   on('command.register', (_, e) => ({ value: { command: e.name } }))
   on('tool.register', (_, e) => ({ value: { tool: `mcp__pixel-buddy__${e.name}` } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('agent.list', () => ({ value: [] }))
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  return clock
 }
 
 /** The band's drawing on a surface, as JSON text to search. */
@@ -217,12 +220,12 @@ test('Claude\'s spec is checked: errors go back to Claude, and the buddy stays',
   expect(await band($)).toContain('Clawd hanging out')
 })
 
-test('a valid spec becomes the buddy, shows its moods and is still there next session', async ($, on) => {
+test('a valid spec becomes the buddy, introduces itself and is still there next session', async ($, on) => {
   await start($, on)
   const r = await $.tool.call({ tool: TOOL, character: MOCHI } as never)
   expect(String(r.result)).toContain('Saved Mochi')
   expect(await band($)).toContain('Mochi ')
-  expect(await band($)).toContain('(1/18)')
+  expect(await band($)).toContain("Hey there, I'm Mochi, your new buddy!")
 
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
   expect(await band($)).toContain('Mochi ')
@@ -357,4 +360,34 @@ test('/buddy-dance through the engine, kept for next time', async ($, on) => {
   expect(await band($)).toContain('Clawd dancing')
   await $.command.run({ command: 'buddy-dance', args: 'off' } as never)
   expect(await band($)).toContain('Clawd hanging out')
+})
+
+test('a new buddy says hello by the login name, dances, then gets on with it', async ($, on) => {
+  const clock = await start($, on, undefined, { USER: 'alex' })
+  await $.tool.call({ tool: TOOL, character: MOCHI } as never)
+  expect(await band($)).toContain("Hey Alex, I'm Mochi, your new buddy!")
+  await clock.advance(HELLO_MS)
+  expect(await band($)).toContain('Mochi dancing')
+  await clock.advance(INTRO_DANCE_MS)
+  expect(await band($)).toContain('Mochi hanging out')
+
+  // Changing it shows every mood instead.
+  await $.tool.call({ tool: TOOL, character: { ...MOCHI, glyph: '=^o^=' } } as never)
+  expect(await band($)).toContain('(1/18)')
+})
+
+test('/buddy-hello replays it, and remembers the name you give', async ($, on) => {
+  await start($, on, undefined, { USER: 'alex' })
+  expect((await $.command.run({ command: 'buddy-hello', args: 'Robin' } as never)).text).toBe('Nice to meet you, Robin!')
+  expect(await band($)).toContain("Hey Robin, I'm Clawd, your new buddy!")
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  await $.command.run({ command: 'buddy-hello' } as never)
+  expect(await band($)).toContain("Hey Robin, I'm Clawd")
+})
+
+test('the name to greet: saved, else the login name, else "there"', () => {
+  expect(greetingName('Robin', 'alex')).toBe('Robin')
+  expect(greetingName(undefined, 'alex')).toBe('Alex')
+  expect(greetingName(undefined, 'root.user')).toBe('there')
+  expect(greetingName(undefined, undefined)).toBe('there')
 })

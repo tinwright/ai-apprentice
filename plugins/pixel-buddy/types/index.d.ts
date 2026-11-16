@@ -1,6 +1,8 @@
 export type Phase = 'awake' | 'coffee' | 'lunch' | 'sleep'
 export type Activity = 'none' | 'typing' | 'writing' | 'searching'
 export type Moment = 'none' | 'oops' | 'proud' | 'stretch' | 'thumbs' | 'sweep'
+/** Introducing itself: saying hello, then a little dance. */
+export type Intro = 'none' | 'hello' | 'dance'
 export type Waiting = 'none' | 'approval' | 'question' | 'impatient'
 
 export type Point = [number, number]
@@ -41,6 +43,8 @@ declare module 'claude-code' {
       isJumping: boolean
       isSipping: boolean
       isWild: boolean
+      intro: Intro
+      personName: string
       activity: Activity
       helpers: number
       moment: Moment

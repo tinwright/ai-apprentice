@@ -14,6 +14,8 @@ export const FRIDAY_FROM = 12 * 60 // Friday afternoon sunglasses
 export const JUMP_MS = 4000
 export const COFFEE_BREAK_MS = 30_000
 export const WILD_MS = 30_000
+export const HELLO_MS = 4000 // the introduction's hello
+export const INTRO_DANCE_MS = 8000 // and the dance after it
 export const DOZE_AFTER_MS = 20 * 60_000 // nod off after 20 idle minutes
 export const IMPATIENT_AFTER_MS = 60_000 // tap its foot after a question waits 1 min
 export const PROUD_TURN_MS = 90_000 // a turn this long earns a ta-da
@@ -115,6 +117,16 @@ export const DEMO: { pose: Pose; caption: string; shades?: boolean; helpers?: nu
   { pose: 'lunch', caption: CAPTION.lunch },
   { pose: 'jump', caption: CAPTION.jump },
 ]
+/** What a buddy says when it introduces itself. */
+export const helloLine = (person: string, buddy: string) => `Hey ${person}, I'm ${buddy}, your new buddy!`
+
+/** The name to greet: the login name, capitalised, or "there". */
+export function greetingName(saved: unknown, login: string | undefined): string {
+  if (typeof saved === 'string' && saved.trim()) return saved.trim()
+  const user = (login ?? '').trim()
+  return /^[a-z][a-z-]*$/i.test(user) ? user[0]!.toUpperCase() + user.slice(1) : 'there'
+}
+
 /** The mood show for this buddy: dancers show their moves second. */
 export function demoFor(dances: boolean): typeof DEMO {
   return dances ? [DEMO[0]!, { pose: 'dance', caption: 'dancing ♪' }, { pose: 'wild', caption: CAPTION.wild }, ...DEMO.slice(1)] : DEMO

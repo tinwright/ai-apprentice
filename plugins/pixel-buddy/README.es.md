@@ -17,7 +17,7 @@ En Claude Code, agrega una vez el marketplace de tinwright y luego instala el pl
 
 Tu compañero aparece solo sobre el cuadro de texto en la aplicación de escritorio, y como un pequeño retrato fijo con una leyenda en la terminal. Al principio es Clawd, el compañero incluido. Si también tienes instalado Clawd Buddy, solo se muestra Pixel Buddy, así que nunca verás dos compañeros.
 
-**Crea el tuyo**: escribe `/buddy-make` y descríbelo, por ejemplo `/buddy-make una rana verde con sueño y una coronita`, o pega una imagen y escribe `/buddy-make como este`. Claude diseña un pequeño personaje de píxeles, el mod comprueba que sirva (tamaño, colores que se vean en temas claros y oscuros, una cara donde dibujar los ojos) y el personaje ocupa su lugar sobre el cuadro de texto, pasando una vez por todos sus estados de ánimo. Si `/buddy-make` no aparece en la lista, escribe `/pixel-buddy:buddy-make`.
+**Crea el tuyo**: escribe `/buddy-make` y descríbelo, por ejemplo `/buddy-make una rana verde con sueño y una coronita`, o pega una imagen y escribe `/buddy-make como este`. Claude diseña un pequeño personaje de píxeles, el mod comprueba que sirva (tamaño, colores que se vean en temas claros y oscuros, una cara donde dibujar los ojos) y el personaje ocupa su lugar sobre el cuadro de texto: saluda, dice «Hey Alex, I'm Bolt, your new buddy!» y baila un poco. Si `/buddy-make` no aparece en la lista, escribe `/pixel-buddy:buddy-make`.
 
 **Cámbialo**: solo pídelo, por ejemplo «hazle las orejas más grandes», «hazlo morado» o «haz que baile». Claude actualiza el mismo compañero. Un bailarín se balancea y sube los brazos por turnos cuando no pasa nada más.
 
@@ -29,6 +29,7 @@ Tu compañero aparece solo sobre el cuadro de texto en la aplicación de escrito
 - `/buddy-demo`: ver todos sus estados de ánimo, tres segundos cada uno.
 - `/buddy-use`: listar tus compañeros; `/buddy-use <nombre>` cambia a uno. Clawd siempre está.
 - `/buddy-forget <nombre>`: borrar un compañero. Se conservan los 12 más recientes.
+- `/buddy-hello [tu nombre]`: tu compañero se vuelve a presentar. Te saluda con tu nombre de usuario del equipo hasta que le des otro.
 - `/buddy-dance`: tu compañero baila cuando no pasa nada más; otra vez para que pare (o `/buddy-dance on` / `off`).
 - `/buddy-flarhgunnstow`: 30 segundos de baile desatado (si tiene sombrero, también se bambolea).
 - `/buddy-jump` y `/buddy-coffee`: un salto y una pausa para el café de 30 segundos.

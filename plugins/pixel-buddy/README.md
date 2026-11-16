@@ -17,7 +17,7 @@ In Claude Code, add the tinwright marketplace once, then install the plugin:
 
 Your buddy appears above the prompt by itself, in the desktop app, and as a small still portrait with a caption in the terminal. It starts as Clawd, the built-in buddy. If Clawd Buddy is installed too, only Pixel Buddy shows, so you never get two.
 
-**Make your own**: type `/buddy-make` and describe it, for example `/buddy-make a sleepy green frog with a tiny crown`, or paste a picture and type `/buddy-make like this`. Claude designs a small pixel character, the mod checks it fits (size, colours that show on light and dark themes, a face to draw on), and it takes over above the prompt, going through all its moods once. If `/buddy-make` isn't listed, type `/pixel-buddy:buddy-make`.
+**Make your own**: type `/buddy-make` and describe it, for example `/buddy-make a sleepy green frog with a tiny crown`, or paste a picture and type `/buddy-make like this`. Claude designs a small pixel character, the mod checks it fits (size, colours that show on light and dark themes, a face to draw on), and it takes over above the prompt: it waves, says "Hey Alex, I'm Bolt, your new buddy!", and dances a little. If `/buddy-make` isn't listed, type `/pixel-buddy:buddy-make`.
 
 **Change it**: just ask, for example "make its ears bigger", "make it purple" or "make it dance". Claude updates the same buddy. A dancer sways and swaps its arms whenever nothing else is going on.
 
@@ -29,6 +29,7 @@ Your buddy appears above the prompt by itself, in the desktop app, and as a smal
 - `/buddy-demo`: watch every mood, three seconds each.
 - `/buddy-use`: list your buddies; `/buddy-use <name>` switches to one. Clawd is always there.
 - `/buddy-forget <name>`: delete a buddy. The 12 newest are kept.
+- `/buddy-hello [your name]`: your buddy introduces itself again. It greets you by your computer's login name until you give it another.
 - `/buddy-dance`: your buddy dances whenever nothing else is going on; again to stop (or `/buddy-dance on` / `off`).
 - `/buddy-flarhgunnstow`: 30 seconds of dancing like nobody is watching (a hat, if it has one, wobbles along).
 - `/buddy-jump` and `/buddy-coffee`: a jump, and a 30-second coffee break.

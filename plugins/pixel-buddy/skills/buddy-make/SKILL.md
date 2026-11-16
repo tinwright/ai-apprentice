@@ -100,7 +100,8 @@ Before each call, count each row's width once more: uneven rows are the most com
 
 ## 5. Show it
 
-When it's saved, the buddy plays all its moods once above the prompt. Tell the person in a
+When it's saved, a new buddy introduces itself above the prompt ("Hey Alex, I'm Bolt, your new
+buddy!") and dances a little; a changed one plays all its moods once. Tell the person in a
 sentence or two what you made and the choices behind it, and that they can:
 
 - ask for changes ("bigger ears", "make it purple"): call `set_character` again with the same name;

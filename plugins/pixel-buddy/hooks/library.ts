@@ -102,7 +102,7 @@ function parsed(input: unknown): unknown {
   }
 }
 
-export type Change = { library?: Library; message: string }
+export type Change = { library?: Library; message: string; isNew?: boolean }
 
 /** Validates a spec from the tool and saves it as the shown buddy. */
 export function save(lib: Library, input: unknown): Change {
@@ -116,11 +116,13 @@ export function save(lib: Library, input: unknown): Change {
   const dropped = others.slice(0, Math.max(0, others.length + 1 - MAX_SAVED))
   const characters = [...others.slice(dropped.length), character]
   const lines = [
-    `${replaced ? 'Updated' : 'Saved'} ${character.name} and switched to it: it is going through all its moods above the prompt now (/buddy-demo shows them again).`,
+    replaced
+      ? `Updated ${character.name}: it is going through all its moods above the prompt now (/buddy-demo shows them again).`
+      : `Saved ${character.name} and switched to it: it is introducing itself above the prompt now (/buddy-demo shows all its moods).`,
     ...warnings.map(w => `Note: ${w}.`),
     ...(dropped.length ? [`To keep ${MAX_SAVED} buddies, the oldest was removed: ${dropped.map(c => c.name).join(', ')}.`] : []),
   ]
-  return { library: { ...lib, characters, current: key }, message: lines.join('\n') }
+  return { library: { ...lib, characters, current: key }, message: lines.join('\n'), isNew: !replaced }
 }
 
 export function use(lib: Library, name: string): Change {

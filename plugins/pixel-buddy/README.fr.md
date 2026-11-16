@@ -17,7 +17,7 @@ Dans Claude Code, ajoutez une fois la place de marché tinwright, puis installez
 
 Votre compagnon apparaît tout seul au-dessus de la zone de saisie dans l'application de bureau, et sous forme d'un petit portrait fixe avec une légende dans le terminal. Au départ, c'est Clawd, le compagnon intégré. Si Clawd Buddy est aussi installé, seul Pixel Buddy s'affiche : jamais deux compagnons à la fois.
 
-**Créez le vôtre** : tapez `/buddy-make` suivi d'une description, par exemple `/buddy-make une grenouille verte endormie avec une petite couronne`, ou collez une image et tapez `/buddy-make comme ça`. Claude dessine un petit personnage en pixels, le mod vérifie qu'il convient (taille, couleurs visibles sur les thèmes clair et sombre, un visage où dessiner les yeux), puis il prend place au-dessus de la zone de saisie et passe une fois par toutes ses humeurs. Si `/buddy-make` n'apparaît pas dans la liste, tapez `/pixel-buddy:buddy-make`.
+**Créez le vôtre** : tapez `/buddy-make` suivi d'une description, par exemple `/buddy-make une grenouille verte endormie avec une petite couronne`, ou collez une image et tapez `/buddy-make comme ça`. Claude dessine un petit personnage en pixels, le mod vérifie qu'il convient (taille, couleurs visibles sur les thèmes clair et sombre, un visage où dessiner les yeux), puis il prend place au-dessus de la zone de saisie : il fait signe, dit « Hey Alex, I'm Bolt, your new buddy! » et danse un peu. Si `/buddy-make` n'apparaît pas dans la liste, tapez `/pixel-buddy:buddy-make`.
 
 **Modifiez-le** : demandez simplement, par exemple « agrandis ses oreilles », « fais-le en violet » ou « fais-le danser ». Claude met à jour le même compagnon. Un danseur se balance en levant les bras tour à tour dès qu'il ne se passe rien d'autre.
 
@@ -29,6 +29,7 @@ Votre compagnon apparaît tout seul au-dessus de la zone de saisie dans l'applic
 - `/buddy-demo` : voir toutes ses humeurs, trois secondes chacune.
 - `/buddy-use` : lister vos compagnons ; `/buddy-use <nom>` passe à l'un d'eux. Clawd est toujours là.
 - `/buddy-forget <nom>` : supprimer un compagnon. Les 12 plus récents sont conservés.
+- `/buddy-hello [votre prénom]` : votre compagnon se présente à nouveau. Il vous salue par votre nom de session tant que vous ne lui en donnez pas un autre.
 - `/buddy-dance` : votre compagnon danse dès qu'il ne se passe rien d'autre ; une seconde fois pour arrêter (ou `/buddy-dance on` / `off`).
 - `/buddy-flarhgunnstow` : 30 secondes de danse endiablée (son chapeau, s'il en a un, se dandine aussi).
 - `/buddy-jump` et `/buddy-coffee` : un saut, et une pause café de 30 secondes.
