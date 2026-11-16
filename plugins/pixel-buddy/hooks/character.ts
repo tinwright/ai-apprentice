@@ -75,9 +75,10 @@ export function validate(input: unknown): Checked {
   const errors: string[] = []
   const warnings: string[] = []
   if (!isObject(input)) return { errors: ['the character must be an object with name, palette, body and anchors'], warnings }
-  unknownKeys(input, ['name', 'palette', 'body', 'anchors', 'type', 'ink', 'glyph'], 'character', errors)
+  unknownKeys(input, ['name', 'palette', 'body', 'anchors', 'type', 'ink', 'glyph', 'dance', 'hat'], 'character', errors)
 
-  const { name, palette, body, anchors, type, ink, glyph } = input
+  const { name, palette, body, anchors, type, ink, glyph, dance, hat } = input
+  if (dance !== undefined && typeof dance !== 'boolean') errors.push('dance: true or false')
   if (typeof name !== 'string' || !name.trim()) errors.push('name: give it a name')
   else if (name.length > MAX_NAME) errors.push(`name: at most ${MAX_NAME} characters`)
   else if (!/^[\p{L}\p{N}][\p{L}\p{N} '_-]*$/u.test(name)) errors.push('name: letters, digits, spaces, hyphens, underscores and apostrophes only')
@@ -181,6 +182,12 @@ export function validate(input: unknown): Checked {
         if (y < 1 || y > H - 3) errors.push(`${where}: y between 1 and ${H - 3}, so the arms and props fit`)
       }
       if (hands.left[0] >= hands.right[0]) errors.push('anchors.hands: left must be left of right')
+    }
+
+    if (hat !== undefined) {
+      const topEye = Array.isArray(eyes) && eyes.every(isPoint) ? Math.min(...eyes.map(e => e[1])) : 0
+      if (!Number.isInteger(hat) || (hat as number) < 1 || (hat as number) > topEye)
+        errors.push(`hat: the number of rows at the top that are the hat, from 1 to ${topEye} (it must end above the eyes)`)
     }
 
     if (head !== undefined && (!isPoint(head) || !solid(head[0], head[1]) || solid(head[0], head[1] - 1)))

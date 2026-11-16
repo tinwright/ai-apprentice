@@ -13,6 +13,7 @@ export const FRIDAY_FROM = 12 * 60 // Friday afternoon sunglasses
 // ── Timings ────────────────────────────────────────────────────────────────
 export const JUMP_MS = 4000
 export const COFFEE_BREAK_MS = 30_000
+export const WILD_MS = 30_000
 export const DOZE_AFTER_MS = 20 * 60_000 // nod off after 20 idle minutes
 export const IMPATIENT_AFTER_MS = 60_000 // tap its foot after a question waits 1 min
 export const PROUD_TURN_MS = 90_000 // a turn this long earns a ta-da
@@ -78,13 +79,15 @@ export const CAPTION: Record<Pose, string> = {
   sweep: 'tidying up',
   wave: 'needs your OK',
   tap: 'still waiting on you…',
+  dance: '',
+  wild: 'FLARHGUNNSTOW',
 }
 
 const DOING: Record<Pose, string> = {
   idle: 'hanging out', jump: 'jumping', sleep: 'asleep', coffee: 'sipping coffee',
   lunch: 'eating a sandwich', typing: 'typing', writing: 'writing', searching: 'searching with a magnifying glass',
   thinking: 'thinking', oops: 'startled', proud: 'celebrating', stretch: 'stretching',
-  thumbs: 'giving a thumbs-up', sweep: 'sweeping', wave: 'waving for your attention', tap: 'tapping its foot',
+  thumbs: 'giving a thumbs-up', sweep: 'sweeping', wave: 'waving for your attention', tap: 'tapping its foot', dance: 'dancing', wild: 'going absolutely wild',
 }
 
 /** The drawing's alt text: "<name> typing". */
@@ -112,6 +115,11 @@ export const DEMO: { pose: Pose; caption: string; shades?: boolean; helpers?: nu
   { pose: 'lunch', caption: CAPTION.lunch },
   { pose: 'jump', caption: CAPTION.jump },
 ]
+/** The mood show for this buddy: dancers show their moves second. */
+export function demoFor(dances: boolean): typeof DEMO {
+  return dances ? [DEMO[0]!, { pose: 'dance', caption: 'dancing ♪' }, { pose: 'wild', caption: CAPTION.wild }, ...DEMO.slice(1)] : DEMO
+}
+
 export function choosePose(s: {
   phase: Phase; sipping: boolean; activity: Activity; moment: Moment; waiting: Waiting; dozing: boolean; working: boolean
 }): Pose {

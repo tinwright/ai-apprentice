@@ -61,6 +61,10 @@ from the top-left pixel, starting at 0.
   until it gestures).
 - `ink` (optional): eye colour if the face is dark (it defaults to near-black).
 - `glyph` (optional): up to 5 characters for the terminal, such as `=^.^=`.
+- `dance` (optional): `true` for a character who'd rather dance than stand still. It then sways,
+  swapping its arms up and down, whenever nothing else is going on.
+- `hat` (optional): how many rows at the top of the body are a hat. The hat then wobbles on its
+  own while the buddy dances. It must end above the eyes.
 
 ## 4. Call the tool
 

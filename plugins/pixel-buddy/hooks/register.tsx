@@ -3,10 +3,10 @@ import type { EngineInterface, Register, RenderInput } from 'claude-code'
 
 import type { Activity, Character, Moment, Waiting } from '../types'
 import {
-  CAPTION, COFFEE_BREAK_MS, DEMO, DEMO_MS, DOZE_AFTER_MS, HELPER_STALE_MS,
+  CAPTION, COFFEE_BREAK_MS, WILD_MS, DEMO_MS, DOZE_AFTER_MS, HELPER_STALE_MS,
   HOLD_MS, IMPATIENT_AFTER_MS, JUMP_MS, MIN_POSE_MS, MOMENT_MIN_MS, OOPS_COOLDOWN_MS, PROUD_TURN_MS, PUSH_RE,
   STRETCH_TURN_MS, TEST_RE,
-  activityFor, altFor, choosePose, fridayAt, isPing, phaseAt,
+  activityFor, altFor, choosePose, demoFor, fridayAt, isPing, phaseAt,
 } from './buddy'
 import { CLAWD, compile, mainColour } from './character'
 import type { Compiled } from './character'
@@ -20,6 +20,7 @@ import type { Library } from './library'
 const phase = atom({ plugin: 'pixel-buddy', key: 'phase' } as const, 'awake')
 const isJumping = atom({ plugin: 'pixel-buddy', key: 'isJumping' } as const, false)
 const isSipping = atom({ plugin: 'pixel-buddy', key: 'isSipping' } as const, false)
+const isWild = atom({ plugin: 'pixel-buddy', key: 'isWild' } as const, false)
 const activity = atom({ plugin: 'pixel-buddy', key: 'activity' } as const, 'none')
 const helpers = atom({ plugin: 'pixel-buddy', key: 'helpers' } as const, 0)
 const moment = atom({ plugin: 'pixel-buddy', key: 'moment' } as const, 'none')
@@ -71,11 +72,12 @@ let stopDemo: (() => void) | undefined
 
 async function startDemo($: EngineInterface) {
   stopDemo?.()
+  const length = demoFor((await read($, character)).dance === true).length
   await update($, demoStep, () => 0)
   const timer = $.clock.every(DEMO_MS, () => {
     void update($, demoStep, n => {
       const next = n + 1
-      if (next >= DEMO.length) {
+      if (next >= length) {
         stopDemo?.()
         return -1
       }
@@ -89,6 +91,7 @@ async function startDemo($: EngineInterface) {
 let stopTicker: (() => void) | undefined
 let stopJump: (() => void) | undefined
 let stopCoffee: (() => void) | undefined
+let stopWild: (() => void) | undefined
 let stopQuestion: (() => void) | undefined
 let lastActive = 0
 let turnStartedAt = 0
@@ -207,6 +210,14 @@ async function touch($: EngineInterface) {
   await update($, isDozing, prev => (prev ? false : prev))
 }
 
+async function goWild($: EngineInterface) {
+  stopWild?.()
+  await update($, isWild, () => true)
+  stopWild = $.clock.after(WILD_MS, () => {
+    void update($, isWild, () => false)
+  }).cancel
+}
+
 async function coffeeBreak($: EngineInterface) {
   stopCoffee?.()
   await update($, isSipping, () => true)
@@ -231,6 +242,7 @@ export const register: Register = on => {
     await $.command.register({ name: 'buddy-use', description: 'List your buddies, or switch to one: /buddy-use <name>' })
     await $.command.register({ name: 'buddy-forget', description: 'Delete a saved buddy: /buddy-forget <name>' })
     await $.command.register({ name: 'buddy-jump', description: 'Make your buddy jump as if a session just pinged you' })
+    await $.command.register({ name: 'buddy-flarhgunnstow', description: 'Your buddy dances like nobody is watching, for 30 seconds' })
     await $.command.register({ name: 'buddy-coffee', description: 'Give your buddy a cup of coffee for a little while' })
     await $.tool.register(SET_CHARACTER)
     // An unreadable store still leaves a buddy: Clawd.
@@ -249,8 +261,10 @@ export const register: Register = on => {
     // Their expiry timers died with the last module; the flags would stick.
     stopJump?.()
     stopCoffee?.()
+    stopWild?.()
     await update($, isJumping, () => false)
     await update($, isSipping, () => false)
+    await update($, isWild, () => false)
     workflowAgents.clear()
     await update($, helpers, () => 0)
     // A demo's ticker would otherwise tick -1 back to 0 and restart it.
@@ -280,6 +294,11 @@ export const register: Register = on => {
     return { text: `${(await read($, character)).name} is jumping!` }
   })
 
+  on('command.run', { command: 'buddy-flarhgunnstow' }, async $ => {
+    await goWild($)
+    return { text: `${(await read($, character)).name}: FLARHGUNNSTOW 🕺` }
+  })
+
   on('command.run', { command: 'buddy-coffee' }, async $ => {
     await coffeeBreak($)
     return { text: `${(await read($, character)).name} is enjoying a coffee ☕` }
@@ -287,7 +306,8 @@ export const register: Register = on => {
 
   on('command.run', { command: 'buddy-demo' }, async $ => {
     await startDemo($)
-    return { text: `${(await read($, character)).name}'s mood show: ${DEMO.length} moods, 3 seconds each 🎬` }
+    const buddy = await read($, character)
+    return { text: `${buddy.name}'s mood show: ${demoFor(buddy.dance === true).length} moods, 3 seconds each 🎬` }
   })
 
   on('command.run', { command: 'buddy-use' }, async ($, e) => {
@@ -475,10 +495,11 @@ export const register: Register = on => {
     const name = k.character.name
     const size = sceneSize(k)
     const step = await read($, demoStep)
-    const demo = step >= 0 ? DEMO[step] : undefined
+    const show = demoFor(k.character.dance === true)
+    const demo = step >= 0 ? show[step] : undefined
     if (demo) {
       if (e.surface === 'terminal') {
-        return terminalRow($, e, k, demo.pose, demo.shades ?? false, `${demo.caption} (${step + 1}/${DEMO.length})`)
+        return terminalRow($, e, k, demo.pose, demo.shades ?? false, `${demo.caption} (${step + 1}/${show.length})`)
       }
       const { Box, Text, Svg } = $.ui.resolve(e)
       const demoHelpers = demo.helpers ?? 0
@@ -486,7 +507,7 @@ export const register: Register = on => {
         <Box flexDirection="row" alignItems="center">
           <Svg source={scene(k, demo.pose, demo.shades ?? false)} alt={altFor(name, demo.pose)} width={size.w * size.u} height={size.h * size.u} isInteractive />
           {demoHelpers > 0 ? <Svg source={minis(k, demoHelpers)} alt={`${demoHelpers} helpers`} width={minisWidth(k) * size.u} height={size.h * size.u} isInteractive /> : null}
-          <Text dimColor>{`${demo.caption}  (${step + 1}/${DEMO.length})`}</Text>
+          <Text dimColor>{`${demo.caption}  (${step + 1}/${show.length})`}</Text>
         </Box>
       )
     }
@@ -502,12 +523,14 @@ export const register: Register = on => {
     })
     const pinged = await read($, isJumping)
     // No jumping with hot coffee (or lunch) in hand.
-    const pose: Pose = pinged && base !== 'coffee' && base !== 'lunch' ? 'jump' : base
+    const moved: Pose = base === 'idle' && k.character.dance === true ? 'dance' : base
+    const wild = (await read($, isWild)) && moved !== 'wave' && moved !== 'tap'
+    const pose: Pose = wild ? 'wild' : pinged && moved !== 'coffee' && moved !== 'lunch' ? 'jump' : moved
     const shades = await read($, isFriday)
     const helperCount = await read($, helpers)
     const showHelpers = helperCount > 0 && pose !== 'sleep'
 
-    let caption = pinged ? CAPTION.jump : CAPTION[pose]
+    let caption = pinged && !wild ? CAPTION.jump : CAPTION[pose]
     if (!caption && shades) caption = "it's Friday 😎"
     if (base === 'sleep' && (await read($, isDozing)) && (await read($, phase)) !== 'sleep') caption = 'dozing…'
     if (showHelpers) caption = [caption, `+ ${helperCount} helper${helperCount > 1 ? 's' : ''}`].filter(Boolean).join(' · ')

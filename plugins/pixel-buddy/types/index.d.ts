@@ -28,6 +28,10 @@ export type Character = {
   ink?: string
   /** Up to 5 characters standing for it in the terminal. */
   glyph?: string
+  /** Dances when nothing else is going on, instead of bobbing. */
+  dance?: boolean
+  /** How many rows at the top are a hat, which wobbles while it dances. */
+  hat?: number
 }
 
 declare module 'claude-code' {
@@ -36,6 +40,7 @@ declare module 'claude-code' {
       phase: Phase
       isJumping: boolean
       isSipping: boolean
+      isWild: boolean
       activity: Activity
       helpers: number
       moment: Moment

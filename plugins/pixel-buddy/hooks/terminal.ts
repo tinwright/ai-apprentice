@@ -16,9 +16,9 @@ type Face = 'open' | 'closed' | 'happy' | 'wide' | 'up' | 'down' | 'flat'
 
 const FACE: Partial<Record<Pose, Face>> = {
   sleep: 'closed', stretch: 'closed', jump: 'happy', proud: 'happy', thumbs: 'happy', oops: 'wide',
-  tap: 'flat', thinking: 'up', typing: 'down', writing: 'down', sweep: 'down',
+  tap: 'flat', thinking: 'up', dance: 'happy', wild: 'happy', typing: 'down', writing: 'down', sweep: 'down',
 }
-const SMILE = new Set<Pose>(['jump', 'proud', 'thumbs'])
+const SMILE = new Set<Pose>(['jump', 'proud', 'thumbs', 'dance', 'wild'])
 const SHADES = new Set<Face>(['open', 'up', 'down'])
 
 /** The rows of a still portrait of the buddy in this pose, or undefined when it's too tall. */
@@ -37,12 +37,14 @@ export function portrait(k: Compiled, pose: Pose, shades: boolean): Run[][] | un
   k.grid.forEach((row, y) => row.forEach((c, x) => c && set(x, y, c)))
 
   // Arms at rest, or the right one up for a wave.
-  if (k.type !== 'blob' || pose === 'wave') {
+  if (k.type !== 'blob' || pose === 'wave' || pose === 'dance' || pose === 'wild') {
     const long = k.type === 'biped' ? 2 : 1
     const [lx, ly] = k.left
     const [rx, ry] = k.right
-    for (let i = 0; i < long; i++) set(lx - 1, ly + i, k.armL)
-    if (pose === 'wave') for (let i = 1; i <= 3; i++) set(rx + 1, ry - i, k.armR)
+    if (pose === 'wild') for (let i = 1; i <= 3; i++) set(lx - 1, ly - i, k.armL)
+    else if (pose === 'dance') for (let i = 1; i <= 2; i++) set(lx - 1 - (i - 1), ly - i, k.armL)
+    else for (let i = 0; i < long; i++) set(lx - 1, ly + i, k.armL)
+    if (pose === 'wave' || pose === 'wild') for (let i = 1; i <= 3; i++) set(rx + 1, ry - i, k.armR)
     else for (let i = 0; i < long; i++) set(rx + 1, ry + i, k.armR)
   }
 

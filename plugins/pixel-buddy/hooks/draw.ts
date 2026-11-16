@@ -25,11 +25,11 @@ export type Mouth = 'none' | 'smile' | 'o'
 
 export type Pose =
   | 'idle' | 'jump' | 'sleep' | 'coffee' | 'lunch' | 'typing' | 'writing' | 'searching'
-  | 'thinking' | 'oops' | 'proud' | 'stretch' | 'thumbs' | 'sweep' | 'wave' | 'tap'
+  | 'thinking' | 'oops' | 'proud' | 'stretch' | 'thumbs' | 'sweep' | 'wave' | 'tap' | 'dance' | 'wild'
 
 export const POSES: Pose[] = [
   'idle', 'jump', 'sleep', 'coffee', 'lunch', 'typing', 'writing', 'searching',
-  'thinking', 'oops', 'proud', 'stretch', 'thumbs', 'sweep', 'wave', 'tap',
+  'thinking', 'oops', 'proud', 'stretch', 'thumbs', 'sweep', 'wave', 'tap', 'dance', 'wild',
 ]
 
 // ── Body ───────────────────────────────────────────────────────────────────
@@ -67,13 +67,14 @@ function runs(k: Compiled, keep: (x: number, y: number) => boolean): string {
   return out
 }
 
-const bodies = new WeakMap<Compiled, { main: string; foot: string }>()
+const bodies = new WeakMap<Compiled, { main: string; foot: string; hat: string }>()
 function bodyOf(k: Compiled) {
   let b = bodies.get(k)
   if (!b) {
     const foot = footCells(k)
     const isFoot = (x: number, y: number) => y === k.h - 1 && foot.has(x)
-    b = { main: runs(k, (x, y) => !isFoot(x, y)), foot: runs(k, isFoot) }
+    const hat = k.character.hat ?? 0
+    b = { main: runs(k, (x, y) => y >= hat && !isFoot(x, y)), foot: runs(k, isFoot), hat: runs(k, (_x, y) => y < hat) }
     bodies.set(k, b)
   }
   return b
@@ -143,12 +144,13 @@ export const arm = {
   broom: (k: Compiled) => limb(k, 'right', 0, 0, 2, 1),
 }
 
-export type Parts = { eyes?: Eyes; mouth?: Mouth; armL?: string; armR?: string; tapFoot?: boolean; shades?: boolean }
+export type Parts = { eyes?: Eyes; mouth?: Mouth; armL?: string; armR?: string; tapFoot?: boolean; shades?: boolean; hat?: string }
 
 /** The character with the given face and arms, in its own pixel grid. */
 export function figure(k: Compiled, o: Parts = {}): string {
   const body = bodyOf(k)
   return (
+    (o.hat ? g(o.hat, body.hat) : body.hat) +
     body.main +
     (o.tapFoot ? g('foot', body.foot) : body.foot) +
     (o.armL ?? arm.rest(k, 'left')) +
@@ -205,6 +207,14 @@ export const STYLE = `
   .waveA{animation:waveA .9s steps(1) infinite}.waveB{animation:waveB .9s steps(1) infinite}
   @keyframes waveA{0%,49%{opacity:1}50%,100%{opacity:0}}
   @keyframes waveB{0%,49%{opacity:0}50%,100%{opacity:1}}
+  .groove{animation:groove .9s steps(1) infinite}
+  @keyframes groove{0%,24%{transform:translate(0,0)}25%,49%{transform:translate(-1px,-1px)}50%,74%{transform:translate(0,0)}75%,100%{transform:translate(1px,-1px)}}
+  .wobble{animation:wobble .9s steps(1) infinite}
+  @keyframes wobble{0%,24%{transform:translate(-1px,0)}25%,49%{transform:translate(0,-1px)}50%,74%{transform:translate(1px,0)}75%,100%{transform:translate(0,0)}}
+  .wild{animation:wild .45s steps(1) infinite}
+  @keyframes wild{0%,24%{transform:translate(-2px,-1px)}25%,49%{transform:translate(0,-3px)}50%,74%{transform:translate(2px,-1px)}75%,100%{transform:translate(0,0)}}
+  .wobble2{animation:wobble .3s steps(1) infinite}
+  .fastA{animation:waveA .45s steps(1) infinite}.fastB{animation:waveB .45s steps(1) infinite}
   .foot{animation:foot .6s steps(1) infinite}
   @keyframes foot{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-1px)}}
 `
@@ -283,6 +293,25 @@ export function drawPose(k: Compiled, pose: Pose, shades: boolean): string {
     }
     case 'wave':
       return figure(k, { armR: g('waveA', arm.waveA(k)) + g('waveB', arm.waveB(k)), shades })
+    case 'dance':
+      // Swaying side to side, the arms swapping up and down with each step.
+      return g(
+        'groove',
+        figure(k, { eyes: 'happy', mouth: 'smile', armL: '', armR: '', tapFoot: true, shades, hat: 'wobble' }) +
+          g('waveA', arm.cheer(k, 'left') + arm.rest(k, 'right')) +
+          g('waveB', arm.rest(k, 'left') + arm.cheer(k, 'right')),
+      )
+    case 'wild':
+      // Flarhgunnstow: everything at once, twice as fast.
+      return (
+        g(
+          'wild',
+          figure(k, { eyes: 'happy', mouth: 'smile', armL: '', armR: '', tapFoot: true, hat: 'wobble2' }) +
+            g('fastA', arm.up(k, 'left') + arm.cheer(k, 'right')) +
+            g('fastB', arm.cheer(k, 'left') + arm.up(k, 'right')),
+        ) +
+        px(hx - 4, top - 3, 1, 1, GOLD, 'd1') + px(hx + 4, top - 4, 1, 1, RED, 'd2') + px(hx, top - 5, 1, 1, GREEN, 'd3')
+      )
     case 'tap':
       return figure(k, { eyes: 'flat', tapFoot: true })
     default:

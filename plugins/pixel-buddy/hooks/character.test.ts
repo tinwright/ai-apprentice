@@ -52,7 +52,7 @@ test('anchors must sit on the body where the drawing needs them', () => {
 
 test('unknown fields and wrong types are refused, not ignored', () => {
   expect(errorsOf('a robot')).toContain('must be an object')
-  expect(errorsOf({ ...BOLT, hat: 'red' })).toContain('unknown field "hat"')
+  expect(errorsOf({ ...BOLT, scarf: 'red' })).toContain('unknown field "scarf"')
   expect(errorsOf({ ...BOLT, type: 'dragon' })).toContain('type: one of')
   expect(errorsOf({ ...BOLT, name: '' })).toContain('give it a name')
   expect(errorsOf({ ...BOLT, name: '<script>' })).toContain('letters, digits')
@@ -283,4 +283,53 @@ test('with Clawd Buddy installed too, only this buddy shows', async ($, on) => {
   await ui.unmount()
   expect(drawn).not.toContain('clawd-buddy')
   expect(drawn).toContain('skywatch')
+})
+
+// ── Dancing ────────────────────────────────────────────────────────────────
+test('a dancer dances when nothing else is going on, and its demo shows the moves', async ($, on) => {
+  await start($, on, { characters: [{ ...BOLT, dance: true }], current: 'bolt' })
+  expect(await band($)).toContain('Bolt dancing')
+  expect((await $.command.run({ command: 'buddy-demo' } as never)).text).toContain('20 moods')
+  expect(await band($)).toContain('(1/20)')
+})
+
+test('dancing is opt-in and checked', async ($, on) => {
+  expect(errorsOf({ ...BOLT, dance: 'yes' })).toContain('dance: true or false')
+  await start($, on, { characters: [BOLT], current: 'bolt' })
+  expect(await band($)).toContain('Bolt hanging out')
+})
+
+test('the dance swaps the arms up and down and sways', () => {
+  const svg = scene(compile(BOLT), 'dance', false)
+  expect(svg).toContain('class="groove"')
+  expect(svg).toContain('class="waveA"')
+  expect(svg).toContain('class="waveB"')
+})
+
+test('a hat wobbles while dancing, and must end above the eyes', () => {
+  expect(errorsOf({ ...BOLT, hat: 4 })).toContain('it must end above the eyes')
+  const k = compile({ ...BOLT, dance: true, hat: 2 })
+  expect(scene(k, 'dance', false)).toContain('class="wobble"')
+  expect(scene(k, 'idle', false)).not.toContain('class="wobble"')
+})
+
+test('/buddy-flarhgunnstow goes wild for 30 seconds, but a question still gets a wave', async ($, on) => {
+  const clock = mock.clock(on, { now: new Date(2026, 10, 16, 15).getTime() })
+  mock.store(on)
+  on('command.register', (_, e) => ({ value: { command: e.name } }))
+  on('tool.register', (_, e) => ({ value: { tool: `mcp__pixel-buddy__${e.name}` } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  on('agent.list', () => ({ value: [] }))
+  on('classic.PermissionRequest', () => ({}))
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+
+  expect((await $.command.run({ command: 'buddy-flarhgunnstow' } as never)).text).toContain('FLARHGUNNSTOW')
+  expect(await band($)).toContain('Clawd going absolutely wild')
+
+  await $.classic.PermissionRequest({ tool_name: 'Bash', tool_input: { command: 'ls' } } as never)
+  expect(await band($)).toContain('needs your OK')
+  await $.prompt.submit({ text: 'ok' } as never).catch(() => {})
+
+  await clock.advance(30_000)
+  expect(await band($)).toContain('Clawd hanging out')
 })

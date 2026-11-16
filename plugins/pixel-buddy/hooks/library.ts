@@ -56,6 +56,8 @@ export const SET_CHARACTER: ToolSpec = {
           type: { type: 'string', enum: ['biped', 'critter', 'blob'], description: 'Arms two pixels long, one, or none at rest.' },
           ink: { type: 'string', description: 'Optional "#RRGGBB" for the eyes and mouth (dark by default).' },
           glyph: { type: 'string', description: 'Optional: up to 5 characters standing for it in the terminal.' },
+          dance: { type: 'boolean', description: 'Optional: true to dance when idle instead of bobbing.' },
+          hat: { type: 'integer', description: 'Optional: how many rows at the top are a hat; it wobbles while dancing.' },
         },
       },
     },
