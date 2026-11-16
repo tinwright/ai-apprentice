@@ -4,7 +4,7 @@ import type { TestBody } from 'claude-code/testing'
 import type { Character } from '../types'
 import { CLAWD, MAX_COLOURS, compile, contrast, validate } from './character'
 import { POSES, minis, scene } from './draw'
-import { MAX_SAVED, forget, load, save, use } from './library'
+import { MAX_SAVED, currentOf as currentOfLib, forget, load, save, setDance, use } from './library'
 import { BOLT, MOCHI } from './samples'
 import { portrait } from './terminal'
 import type { Run } from './terminal'
@@ -331,5 +331,30 @@ test('/buddy-flarhgunnstow goes wild for 30 seconds, but a question still gets a
   await $.prompt.submit({ text: 'ok' } as never).catch(() => {})
 
   await clock.advance(30_000)
+  expect(await band($)).toContain('Clawd hanging out')
+})
+
+test('/buddy-dance switches dancing for the shown buddy, Clawd included', () => {
+  const lib = save(load(undefined, undefined), MOCHI).library!
+  const on = setDance(lib, '')
+  expect(on.message).toBe('Mochi is dancing 🕺')
+  expect(currentOfLib(on.library!).dance).toBe(true)
+  expect(setDance(on.library!, '').message).toBe('Mochi stopped dancing.')
+  expect(setDance(on.library!, 'on').message).toBe('Mochi is dancing 🕺')
+  expect(setDance(lib, 'twirl').library).toBe(undefined)
+
+  const clawd = setDance(use(lib, 'clawd').library!, 'on').library!
+  expect(clawd.clawdDances).toBe(true)
+  expect(clawd.characters.find(c => c.name === 'Mochi')?.dance).toBe(undefined)
+  expect(load(clawd.characters, 'clawd', true).clawdDances).toBe(true)
+})
+
+test('/buddy-dance through the engine, kept for next time', async ($, on) => {
+  await start($, on)
+  expect((await $.command.run({ command: 'buddy-dance' } as never)).text).toBe('Clawd is dancing 🕺')
+  expect(await band($)).toContain('Clawd dancing')
+  await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
+  expect(await band($)).toContain('Clawd dancing')
+  await $.command.run({ command: 'buddy-dance', args: 'off' } as never)
   expect(await band($)).toContain('Clawd hanging out')
 })

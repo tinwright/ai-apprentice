@@ -69,12 +69,14 @@ export type Library = {
   characters: Character[]
   /** The lower-case name of the buddy shown. */
   current: string
+  /** Whether the built-in Clawd dances (/buddy-dance); he isn't saved, so it's kept apart. */
+  clawdDances: boolean
 }
 
 const find = (lib: Library, key: string) => lib.characters.find(c => keyOf(c.name) === key)
 
 /** The saved buddies from the store's raw values, dropping any that no longer validate. */
-export function load(characters: unknown, current: unknown): Library {
+export function load(characters: unknown, current: unknown, clawdDances?: unknown): Library {
   const kept: Character[] = []
   for (const c of Array.isArray(characters) ? characters : []) {
     const checked = validate(c).character
@@ -82,12 +84,12 @@ export function load(characters: unknown, current: unknown): Library {
     const key = keyOf(checked.name)
     if (key !== BUILT_IN && !kept.some(k => keyOf(k.name) === key)) kept.push(checked)
   }
-  const lib = { characters: kept, current: BUILT_IN }
+  const lib = { characters: kept, current: BUILT_IN, clawdDances: clawdDances === true }
   return typeof current === 'string' && find(lib, current) ? { ...lib, current } : lib
 }
 
 export function currentOf(lib: Library): Character {
-  return find(lib, lib.current) ?? CLAWD
+  return find(lib, lib.current) ?? (lib.clawdDances ? { ...CLAWD, dance: true } : CLAWD)
 }
 
 /** A spec sent as JSON text instead of an object is read as the object. */
@@ -118,7 +120,7 @@ export function save(lib: Library, input: unknown): Change {
     ...warnings.map(w => `Note: ${w}.`),
     ...(dropped.length ? [`To keep ${MAX_SAVED} buddies, the oldest was removed: ${dropped.map(c => c.name).join(', ')}.`] : []),
   ]
-  return { library: { characters, current: key }, message: lines.join('\n') }
+  return { library: { ...lib, characters, current: key }, message: lines.join('\n') }
 }
 
 export function use(lib: Library, name: string): Change {
@@ -137,9 +139,22 @@ export function forget(lib: Library, name: string): Change {
   const characters = lib.characters.filter(c => c !== found)
   const current = lib.current === key ? BUILT_IN : lib.current
   return {
-    library: { characters, current },
+    library: { ...lib, characters, current },
     message: `Deleted ${found.name}.${current !== lib.current ? ` ${CLAWD.name} is back.` : ''}`,
   }
+}
+
+/** /buddy-dance: "on", "off", or nothing to switch. */
+export function setDance(lib: Library, arg: string): Change {
+  const word = arg.trim().toLowerCase()
+  if (word && word !== 'on' && word !== 'off') return { message: 'Use /buddy-dance on, /buddy-dance off, or /buddy-dance to switch.' }
+  const shown = currentOf(lib)
+  const dance = word === 'on' ? true : word === 'off' ? false : shown.dance !== true
+  const library =
+    lib.current === BUILT_IN
+      ? { ...lib, clawdDances: dance }
+      : { ...lib, characters: lib.characters.map(c => (keyOf(c.name) === lib.current ? { ...c, dance } : c)) }
+  return { library, message: dance ? `${shown.name} is dancing 🕺` : `${shown.name} stopped dancing.` }
 }
 
 export function listing(lib: Library): string {

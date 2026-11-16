@@ -29,6 +29,7 @@ Votre compagnon apparaît tout seul au-dessus de la zone de saisie dans l'applic
 - `/buddy-demo` : voir toutes ses humeurs, trois secondes chacune.
 - `/buddy-use` : lister vos compagnons ; `/buddy-use <nom>` passe à l'un d'eux. Clawd est toujours là.
 - `/buddy-forget <nom>` : supprimer un compagnon. Les 12 plus récents sont conservés.
+- `/buddy-dance` : votre compagnon danse dès qu'il ne se passe rien d'autre ; une seconde fois pour arrêter (ou `/buddy-dance on` / `off`).
 - `/buddy-flarhgunnstow` : 30 secondes de danse endiablée (son chapeau, s'il en a un, se dandine aussi).
 - `/buddy-jump` et `/buddy-coffee` : un saut, et une pause café de 30 secondes.
 

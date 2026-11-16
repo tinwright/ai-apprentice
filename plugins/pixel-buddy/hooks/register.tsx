@@ -13,7 +13,7 @@ import type { Compiled } from './character'
 import { minis, minisWidth, scene, sceneSize } from './draw'
 import { portrait } from './terminal'
 import type { Pose } from './draw'
-import { SET_CHARACTER, TOOL_NAME, currentOf, forget, listing, load, save, use } from './library'
+import { SET_CHARACTER, TOOL_NAME, currentOf, forget, listing, load, save, setDance, use } from './library'
 import type { Library } from './library'
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -57,13 +57,14 @@ function terminalRow($: EngineInterface, e: RenderInput<'AbovePrompt', 'terminal
 
 // ── Saved buddies, kept in the store across sessions ───────────────────────
 async function loadLibrary($: EngineInterface): Promise<Library> {
-  const [characters, current] = await Promise.all([$.store.get('characters'), $.store.get('current')])
-  return load(characters, current)
+  const [characters, current, clawdDances] = await Promise.all([$.store.get('characters'), $.store.get('current'), $.store.get('clawdDances')])
+  return load(characters, current, clawdDances)
 }
 
 async function saveLibrary($: EngineInterface, library: Library) {
   await $.store.set('characters', library.characters)
   await $.store.set('current', library.current)
+  await $.store.set('clawdDances', library.clawdDances)
   const shown: Character = currentOf(library)
   await update($, character, () => shown)
 }
@@ -242,6 +243,7 @@ export const register: Register = on => {
     await $.command.register({ name: 'buddy-use', description: 'List your buddies, or switch to one: /buddy-use <name>' })
     await $.command.register({ name: 'buddy-forget', description: 'Delete a saved buddy: /buddy-forget <name>' })
     await $.command.register({ name: 'buddy-jump', description: 'Make your buddy jump as if a session just pinged you' })
+    await $.command.register({ name: 'buddy-dance', description: 'Make your buddy dance when idle, or stop: /buddy-dance [on|off]' })
     await $.command.register({ name: 'buddy-flarhgunnstow', description: 'Your buddy dances like nobody is watching, for 30 seconds' })
     await $.command.register({ name: 'buddy-coffee', description: 'Give your buddy a cup of coffee for a little while' })
     await $.tool.register(SET_CHARACTER)
@@ -292,6 +294,12 @@ export const register: Register = on => {
   on('command.run', { command: 'buddy-jump' }, async $ => {
     await jump($)
     return { text: `${(await read($, character)).name} is jumping!` }
+  })
+
+  on('command.run', { command: 'buddy-dance' }, async ($, e) => {
+    const r = setDance(await loadLibrary($), e.args ?? '')
+    if (r.library) await saveLibrary($, r.library)
+    return { text: r.message }
   })
 
   on('command.run', { command: 'buddy-flarhgunnstow' }, async $ => {

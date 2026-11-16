@@ -29,6 +29,7 @@ Your buddy appears above the prompt by itself, in the desktop app, and as a smal
 - `/buddy-demo`: watch every mood, three seconds each.
 - `/buddy-use`: list your buddies; `/buddy-use <name>` switches to one. Clawd is always there.
 - `/buddy-forget <name>`: delete a buddy. The 12 newest are kept.
+- `/buddy-dance`: your buddy dances whenever nothing else is going on; again to stop (or `/buddy-dance on` / `off`).
 - `/buddy-flarhgunnstow`: 30 seconds of dancing like nobody is watching (a hat, if it has one, wobbles along).
 - `/buddy-jump` and `/buddy-coffee`: a jump, and a 30-second coffee break.
 

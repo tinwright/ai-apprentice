@@ -29,6 +29,7 @@ Tu compañero aparece solo sobre el cuadro de texto en la aplicación de escrito
 - `/buddy-demo`: ver todos sus estados de ánimo, tres segundos cada uno.
 - `/buddy-use`: listar tus compañeros; `/buddy-use <nombre>` cambia a uno. Clawd siempre está.
 - `/buddy-forget <nombre>`: borrar un compañero. Se conservan los 12 más recientes.
+- `/buddy-dance`: tu compañero baila cuando no pasa nada más; otra vez para que pare (o `/buddy-dance on` / `off`).
 - `/buddy-flarhgunnstow`: 30 segundos de baile desatado (si tiene sombrero, también se bambolea).
 - `/buddy-jump` y `/buddy-coffee`: un salto y una pausa para el café de 30 segundos.
 
