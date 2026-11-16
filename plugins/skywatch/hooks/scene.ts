@@ -66,8 +66,11 @@ function darkColors(label: string, hue: number, sat: number) {
 
 // ---------- pieces of sky ----------
 
+// A soft halo for the biggest stars, so they read through the frosted glass.
+const STARGLOW = '<filter id="starglow" x="-2" y="-2" width="5" height="5"><feGaussianBlur stdDeviation="2.5"/><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter>'
+
 function svg(defs: string, style: string, body: string): string {
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"><defs>${defs}</defs><style>${style} ${REDUCED}</style>${body}</svg>`
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice"><defs>${STARGLOW}${defs}</defs><style>${style} ${REDUCED}</style>${body}</svg>`
 }
 
 function stars(count: number, fade: number): string {
@@ -77,13 +80,16 @@ function stars(count: number, fade: number): string {
   for (let i = 0; i < count; i++) {
     const x = Math.round(rand() * 1600)
     const y = Math.round(rand() * 640)
-    const r = (0.8 + rand() * 1.6).toFixed(1)
-    out += `<circle class="tw" cx="${x}" cy="${y}" r="${r}" fill="#fff" style="animation-delay:-${(rand() * 6).toFixed(1)}s;opacity:${(fade * (0.4 + rand() * 0.6)).toFixed(2)}"/>`
+    // About one star in eight is a big one with a glow; the rest are small but still visible.
+    const big = rand() < 0.12
+    const r = (big ? 2.6 + rand() * 1.4 : 1.4 + rand() * 1.4).toFixed(1)
+    const glow = big ? ' filter="url(#starglow)"' : ''
+    out += `<circle class="tw" cx="${x}" cy="${y}" r="${r}" fill="#fff"${glow} style="animation-delay:-${(rand() * 6).toFixed(1)}s;opacity:${(fade * (0.6 + rand() * 0.4)).toFixed(2)}"/>`
   }
   return out
 }
 
-const TWINKLE = '.tw { animation: tw 6s ease-in-out infinite alternate; } @keyframes tw { from { opacity: .15; } }'
+const TWINKLE = '.tw { animation: tw 6s ease-in-out infinite alternate; } @keyframes tw { from { opacity: .45; } }'
 
 // The sun and moon each come as [defs, body]: the body is drawn over the sky, under the clouds.
 type Piece = [defs: string, body: string]
@@ -161,7 +167,9 @@ export function lookFor(sky: Sky): Look {
   const refused = colours.problems.some(line => line.startsWith("Desktop won't paint"))
   const light = sky.period === 'day' || sky.period === 'dawn'
   const tint = light ? (sky.period === 'day' ? '#e8f0f6' : '#f6ebe2') : sky.period === 'dusk' ? '#151018' : '#0b0e1a'
-  const backdrop = { scene: key, glass: { blur: 10, tint, opacity: 0.5 } }
+  // At night the glass is thinner, so the stars and moon show through.
+  const glass = sky.period === 'night' ? { blur: 2, tint, opacity: 0.35 } : { blur: 10, tint, opacity: 0.5 }
+  const backdrop = { scene: key, glass }
   return {
     key,
     source: scene(sky),
