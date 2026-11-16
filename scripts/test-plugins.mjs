@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Runs every plugin's *.test.ts against the real engine with `claude plugin test`. CI pins the
-// Claude Code version through $CLAUDE_BIN; locally it uses the `claude` on PATH.
+// Runs every plugin's *.test.ts against the real engine with `claude plugin test`. CI runs the
+// latest Claude Code through $CLAUDE_BIN; locally it uses the `claude` on PATH.
 
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
