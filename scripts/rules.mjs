@@ -9,7 +9,7 @@ import { ROOT_DIR, itemNames } from './workshop.mjs';
 const MARKETPLACE = path.join(ROOT_DIR, '.claude-plugin', 'marketplace.json');
 const readJSON = (/** @type {string} */ file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 
-/** The `claude` command: $CLAUDE_BIN if set (CI pins a version with npx), else whatever is on PATH. */
+/** The `claude` command: $CLAUDE_BIN if set (CI runs the latest with npx), else whatever is on PATH. */
 export const claudeCommand = () => (process.env.CLAUDE_BIN ?? 'claude').split(' ');
 
 export default {
