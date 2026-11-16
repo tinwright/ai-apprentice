@@ -6,6 +6,8 @@ import { CLAWD, MAX_COLOURS, compile, contrast, validate } from './character'
 import { POSES, minis, scene } from './draw'
 import { MAX_SAVED, forget, load, save, use } from './library'
 import { BOLT, MOCHI } from './samples'
+import { portrait } from './terminal'
+import type { Run } from './terminal'
 
 const errorsOf = (c: unknown) => validate(c).errors.join('\n')
 const withBody = (body: string[], extra: Partial<Character> = {}): Character => ({ ...BOLT, ...extra, body })
@@ -177,39 +179,85 @@ async function start($: Engine, on: On, stored?: Record<string, unknown>) {
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
 }
 
-async function glyph($: Engine, text: RegExp) {
-  const ui = await $.ui.mount(TERMINAL_BAND)
-  const found = (await ui.find({ type: 'Text', text }))?.text
+/** The band's drawing on a surface, as JSON text to search. */
+async function band($: Engine, surface: 'terminal' | 'desktop' = 'desktop') {
+  const ui = await $.ui.mount({ ...TERMINAL_BAND, surface })
+  const drawn = JSON.stringify(await ui.drawn())
   await ui.unmount()
-  return found
+  return drawn
 }
 
 test('Claude\'s spec is checked: errors go back to Claude, and the buddy stays', async ($, on) => {
   await start($, on)
   const r = await $.tool.call({ tool: TOOL, character: { ...MOCHI, body: MOCHI.body.slice(0, 2) } } as never)
   expect(r.deny).toContain('5 to 16 rows')
-  expect(await glyph($, /▐▛█▜▌/)).toBe('▐▛█▜▌')
+  expect(await band($)).toContain('Clawd hanging out')
 })
 
 test('a valid spec becomes the buddy, shows its moods and is still there next session', async ($, on) => {
   await start($, on)
   const r = await $.tool.call({ tool: TOOL, character: MOCHI } as never)
   expect(String(r.result)).toContain('Saved Mochi')
-  expect(await glyph($, /=\^\.\^=/)).toBe('=^.^=')
-  expect(await glyph($, /\(1\/18\)/)).toContain('(1/18)')
+  expect(await band($)).toContain('Mochi ')
+  expect(await band($)).toContain('(1/18)')
 
   await $.session.start({ cwd: '/', surface: 'terminal', isInteractive: true })
-  expect(await glyph($, /=\^\.\^=/)).toBe('=^.^=')
+  expect(await band($)).toContain('Mochi ')
 })
 
 test('/buddy-use lists and switches; /buddy-forget deletes', async ($, on) => {
   await start($, on, { characters: [MOCHI, BOLT], current: 'bolt' })
-  expect(await glyph($, /\[•_•\]/)).toBe('[•_•]')
+  expect(await band($)).toContain('Bolt hanging out')
 
   expect((await $.command.run({ command: 'buddy-use' } as never)).text).toContain('Clawd, Mochi, Bolt (shown)')
   expect((await $.command.run({ command: 'buddy-use', args: 'mochi' } as never)).text).toBe('Mochi is your buddy now.')
-  expect(await glyph($, /=\^\.\^=/)).toBe('=^.^=')
+  expect(await band($)).toContain('Mochi ')
 
   expect((await $.command.run({ command: 'buddy-forget', args: 'Mochi' } as never)).text).toBe('Deleted Mochi. Clawd is back.')
-  expect(await glyph($, /▐▛█▜▌/)).toBe('▐▛█▜▌')
+  expect(await band($)).toContain('Clawd hanging out')
+})
+
+// ── The terminal: half-block portraits ─────────────────────────────────────
+const cellsOf = (rows: Run[][]) => rows.map(r => r.map(run => run.text).join(''))
+
+test('the terminal draws the buddy itself, two pixels per cell', () => {
+  const clawd = portrait(compile(CLAWD), 'idle', false)!
+  expect(clawd.length).toBe(4) // 7 pixels tall, padded to 8
+  expect(cellsOf(clawd).every(r => [...r].length === CLAWD.body[0]!.length + 2)).toBe(true)
+  expect(clawd.flat().some(r => r.fg === '#D97757')).toBe(true)
+  expect(clawd.flat().some(r => r.fg === '#1F1E1D' || r.bg === '#1F1E1D')).toBe(true) // the eyes
+  expect(portrait(compile(BOLT), 'idle', false)!.length).toBe(6)
+})
+
+test('the portrait takes the pose\'s face and a raised arm to wave', () => {
+  const k = compile(CLAWD)
+  expect(cellsOf(portrait(k, 'sleep', false)!)).not.toEqual(cellsOf(portrait(k, 'idle', false)!))
+  const wave = portrait(k, 'wave', false)!
+  expect(cellsOf(wave)).not.toEqual(cellsOf(portrait(k, 'idle', false)!))
+})
+
+test('a buddy too tall for the band falls back to its glyph', () => {
+  expect(portrait(compile(withBody([...BOLT.body, ...BOLT.body.slice(-4)])), 'idle', false)).toBe(undefined)
+})
+
+test('the terminal row shows the portrait in the buddy\'s colours', async ($, on) => {
+  await start($, on, { characters: [MOCHI], current: 'mochi' })
+  const row = await band($, 'terminal')
+  expect(row).toContain('▀')
+  expect(row).toContain('#8B5E3C')
+})
+
+test('with Clawd Buddy installed too, only this buddy shows', async ($, on) => {
+  await start($, on)
+  const row = (plugin: string) => ({ plugin, tree: { type: 'Text', props: {}, children: [plugin] } })
+  const ui = await $.ui.mount({
+    plugin: 'pixel-buddy',
+    surface: 'terminal',
+    component: 'AbovePromptList',
+    props: { ...TERMINAL_BAND.props, rows: [row('clawd-buddy'), row('pixel-buddy'), row('skywatch')] },
+  } as never)
+  const drawn = JSON.stringify(await ui.drawn())
+  await ui.unmount()
+  expect(drawn).not.toContain('clawd-buddy')
+  expect(drawn).toContain('skywatch')
 })

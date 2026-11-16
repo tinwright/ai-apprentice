@@ -15,7 +15,7 @@ In Claude Code, add the tinwright marketplace once, then install the plugin:
 
 ## How to use it
 
-Your buddy appears above the prompt by itself, in the desktop app (and as a one-line status in the terminal). It starts as Clawd, the built-in buddy.
+Your buddy appears above the prompt by itself, in the desktop app, and as a small still portrait with a caption in the terminal. It starts as Clawd, the built-in buddy. If Clawd Buddy is installed too, only Pixel Buddy shows, so you never get two.
 
 **Make your own**: type `/buddy-make` and describe it, for example `/buddy-make a sleepy green frog with a tiny crown`, or paste a picture and type `/buddy-make like this`. Claude designs a small pixel character, the mod checks it fits (size, colours that show on light and dark themes, a face to draw on), and it takes over above the prompt, going through all its moods once. If `/buddy-make` isn't listed, type `/pixel-buddy:buddy-make`.
 

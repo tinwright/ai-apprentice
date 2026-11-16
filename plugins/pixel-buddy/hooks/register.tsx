@@ -11,6 +11,7 @@ import {
 import { CLAWD, compile, mainColour } from './character'
 import type { Compiled } from './character'
 import { minis, minisWidth, scene, sceneSize } from './draw'
+import { portrait } from './terminal'
 import type { Pose } from './draw'
 import { SET_CHARACTER, TOOL_NAME, currentOf, forget, listing, load, save, use } from './library'
 import type { Library } from './library'
@@ -28,13 +29,26 @@ const isFriday = atom({ plugin: 'pixel-buddy', key: 'isFriday' } as const, false
 const demoStep = atom({ plugin: 'pixel-buddy', key: 'demoStep' } as const, -1)
 const character = atom({ plugin: 'pixel-buddy', key: 'character' } as const, CLAWD)
 
-// Terminal: the buddy's glyph in its main colour, then the caption in the
-// terminal's own text colour (coloured text can be hard to read on a light theme).
-function terminalRow($: EngineInterface, e: RenderInput<'AbovePrompt', 'terminal'>, k: Compiled, caption: string) {
+// Terminal: a still half-block portrait in the pose (or, for a tall buddy, its
+// glyph), then the caption in the terminal's own text colour.
+function terminalRow($: EngineInterface, e: RenderInput<'AbovePrompt', 'terminal'>, k: Compiled, pose: Pose, shades: boolean, caption: string) {
   const { Box, Text } = $.ui.resolve(e)
+  const art = portrait(k, pose, shades)
+  if (!art) {
+    return (
+      <Box flexDirection="row">
+        <Text color={mainColour(k)}>{k.glyph}</Text>
+        <Text>{` ${caption}`}</Text>
+      </Box>
+    )
+  }
   return (
     <Box flexDirection="row">
-      <Text color={mainColour(k)}>{k.glyph}</Text>
+      <Box flexDirection="column">
+        {art.map(line => (
+          <Text>{line.map(run => <Text color={run.fg} backgroundColor={run.bg}>{run.text}</Text>)}</Text>
+        ))}
+      </Box>
       <Text>{` ${caption}`}</Text>
     </Box>
   )
@@ -447,6 +461,13 @@ export const register: Register = on => {
     }
   })
 
+  // Pixel Buddy takes over from Clawd Buddy: with both installed, only one buddy shows.
+  on('ui.render', { component: 'AbovePromptList' }, ($, e, next) => {
+    const rows = e.props.rows
+    if (!rows.some(r => r.plugin === 'pixel-buddy') || !rows.some(r => r.plugin === 'clawd-buddy')) return next(e)
+    return next({ ...e, props: { ...e.props, rows: rows.filter(r => r.plugin !== 'clawd-buddy') } })
+  })
+
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.props.hasSurvey) return next(e)
 
@@ -457,7 +478,7 @@ export const register: Register = on => {
     const demo = step >= 0 ? DEMO[step] : undefined
     if (demo) {
       if (e.surface === 'terminal') {
-        return terminalRow($, e, k, `${demo.caption} (${step + 1}/${DEMO.length})`)
+        return terminalRow($, e, k, demo.pose, demo.shades ?? false, `${demo.caption} (${step + 1}/${DEMO.length})`)
       }
       const { Box, Text, Svg } = $.ui.resolve(e)
       const demoHelpers = demo.helpers ?? 0
@@ -492,7 +513,7 @@ export const register: Register = on => {
     if (showHelpers) caption = [caption, `+ ${helperCount} helper${helperCount > 1 ? 's' : ''}`].filter(Boolean).join(' · ')
 
     if (e.surface === 'terminal') {
-      return terminalRow($, e, k, caption || name)
+      return terminalRow($, e, k, pose, shades, caption || name)
     }
 
     const { Box, Text, Svg } = $.ui.resolve(e)

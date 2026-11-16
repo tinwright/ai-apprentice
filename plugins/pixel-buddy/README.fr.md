@@ -15,7 +15,7 @@ Dans Claude Code, ajoutez une fois la place de marché tinwright, puis installez
 
 ## Comment l'utiliser
 
-Votre compagnon apparaît tout seul au-dessus de la zone de saisie dans l'application de bureau (et sous forme d'une ligne d'état dans le terminal). Au départ, c'est Clawd, le compagnon intégré.
+Votre compagnon apparaît tout seul au-dessus de la zone de saisie dans l'application de bureau, et sous forme d'un petit portrait fixe avec une légende dans le terminal. Au départ, c'est Clawd, le compagnon intégré. Si Clawd Buddy est aussi installé, seul Pixel Buddy s'affiche : jamais deux compagnons à la fois.
 
 **Créez le vôtre** : tapez `/buddy-make` suivi d'une description, par exemple `/buddy-make une grenouille verte endormie avec une petite couronne`, ou collez une image et tapez `/buddy-make comme ça`. Claude dessine un petit personnage en pixels, le mod vérifie qu'il convient (taille, couleurs visibles sur les thèmes clair et sombre, un visage où dessiner les yeux), puis il prend place au-dessus de la zone de saisie et passe une fois par toutes ses humeurs. Si `/buddy-make` n'apparaît pas dans la liste, tapez `/pixel-buddy:buddy-make`.
 
