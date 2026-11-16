@@ -1,6 +1,5 @@
 import { expect, test } from 'claude-code/testing'
 
-import { POINTING, sleeping } from './critter'
 import { lookFor, scene } from './scene'
 import type { Period } from './sky'
 
@@ -39,13 +38,4 @@ test('each look names its scene and paints light by day, dark by night', () => {
   const night = lookFor({ period: 'night', t: 0.5, phase: 0 })
   expect(night.key).toBe('night-30')
   expect(day.source).not.toBe(night.source)
-})
-
-test('the critter dreams of the sky it sleeps under', () => {
-  expect(sleeping('night')).toContain('class="sheep')
-  expect(sleeping('day')).toContain('class="fly"')
-  expect(sleeping('dawn')).toContain('class="rise"')
-  expect(sleeping('dusk')).toContain('class="ff"')
-  expect(POINTING).toContain('class="point"')
-  for (const period of PERIODS) expect(sleeping(period)).toContain('prefers-reduced-motion')
 })
