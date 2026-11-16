@@ -61,6 +61,29 @@ test('the terminal gets no band', async ($, on) => {
   await ui.unmount()
 })
 
+test('/skywatch night holds the night sky, and live lets it go', async ($, on) => {
+  // Noon: the live sky is day, so the critter dreams of a butterfly.
+  mock.clock(on, { now: Date.UTC(2026, 10, 15, 12) })
+  sessionList(on, () => [])
+  await $.session.start(START)
+  const ui = await $.ui.mount({ plugin: 'skywatch', surface: 'desktop', ...BAND })
+  expect((await $.command.run({ command: 'skywatch', args: 'night' })).text).toContain('Holding the sky at night')
+  expect((await ui.find({ type: 'Svg' } as any))?.props?.alt).toContain('sheep')
+  expect((await $.command.run({ command: 'skywatch', args: 'live' })).text).toBe('Following the sun again.')
+  expect((await ui.find({ type: 'Svg' } as any))?.props?.alt).not.toContain('sheep')
+  await ui.unmount()
+})
+
+test('the sky setting holds a mood from the start', { options: { sky: 'night' } }, async ($, on) => {
+  mock.clock(on, { now: Date.UTC(2026, 10, 15, 12) })
+  sessionList(on, () => [])
+  await $.session.start(START)
+  const ui = await $.ui.mount({ plugin: 'skywatch', surface: 'desktop', ...BAND })
+  expect((await ui.find({ type: 'Svg' } as any))?.props?.alt).toContain('sheep')
+  expect((await $.command.run({ command: 'skywatch', args: '' })).text).toContain('held at night')
+  await ui.unmount()
+})
+
 test('with no location, /skywatch says so', async ($, on) => {
   mock.clock(on, { now: Date.UTC(2026, 10, 15, 12) })
   sessionList(on, () => [])

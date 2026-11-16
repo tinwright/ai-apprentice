@@ -63,6 +63,20 @@ export function skyNow(d: Date, place?: Place): Sky {
   return { ...at, phase: moonPhase(d), ...(place && place.lat < 0 ? { south: true } : {}) }
 }
 
+// A mood to escape into instead of following the sun, as the settings and /skywatch name it.
+export const MOODS: Record<string, Period> = { morning: 'dawn', day: 'day', evening: 'dusk', night: 'night' }
+// Where each mood holds the sun or moon: just risen, high, about to set, high.
+const MOOD_T: Record<Period, number> = { dawn: 0.03, day: 0.5, dusk: 0.97, night: 0.5 }
+
+export function moodFrom(value: unknown): Period | undefined {
+  return typeof value === 'string' ? MOODS[value.trim().toLowerCase()] : undefined
+}
+
+// The sky held in one mood: the moon still shows tonight's real phase.
+export function moodSky(period: Period, d: Date, place?: Place): Sky {
+  return { period, t: MOOD_T[period], phase: moonPhase(d), ...(place && place.lat < 0 ? { south: true } : {}) }
+}
+
 // An arc low at the sides and high in the middle, kept to the top of the window.
 export function arc(t: number): [number, number] {
   return [180 + t * 1240, 470 - Math.sin(Math.PI * t) * 360]
