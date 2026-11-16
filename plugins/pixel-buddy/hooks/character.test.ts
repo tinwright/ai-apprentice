@@ -4,7 +4,7 @@ import type { TestBody } from 'claude-code/testing'
 import type { Character } from '../types'
 import { CLAWD, MAX_COLOURS, compile, contrast, validate } from './character'
 import { POSES, minis, scene } from './draw'
-import { MAX_SAVED, currentOf as currentOfLib, forget, load, save, setDance, use } from './library'
+import { MAX_SAVED, currentOf as currentOfLib, forget, load, rename, save, setDance, use } from './library'
 import { BOLT, MOCHI } from './samples'
 import { HELLO_MS, INTRO_DANCE_MS, greetingName } from './buddy'
 import { portrait } from './terminal'
@@ -390,4 +390,24 @@ test('the name to greet: saved, else the login name, else "there"', () => {
   expect(greetingName(undefined, 'alex')).toBe('Alex')
   expect(greetingName(undefined, 'root.user')).toBe('there')
   expect(greetingName(undefined, undefined)).toBe('there')
+})
+
+test('/buddy-rename renames the shown buddy in place', () => {
+  const lib = save(save(load(undefined, undefined), BOLT).library!, MOCHI).library!
+  const r = rename(lib, 'Biscuit')
+  expect(r.message).toBe('Mochi is now Biscuit.')
+  expect(r.library!.characters.map(c => c.name)).toEqual(['Bolt', 'Biscuit'])
+  expect(currentOfLib(r.library!).name).toBe('Biscuit')
+  expect(rename(lib, 'bolt').message).toContain('already a buddy called bolt')
+  expect(rename(lib, 'clawd').message).toContain('already a buddy')
+  expect(rename(lib, '<oops>').message).toContain('name:')
+  expect(rename(lib, '').library).toBe(undefined)
+  expect(rename(use(lib, 'clawd').library!, 'Crab').message).toContain('built in')
+  expect(rename(lib, 'MOCHI').library?.characters[1]?.name).toBe('MOCHI')
+})
+
+test('/buddy-rename through the engine introduces it by its new name', async ($, on) => {
+  await start($, on, { characters: [MOCHI], current: 'mochi' }, { USER: 'alex' })
+  expect((await $.command.run({ command: 'buddy-rename', args: 'Biscuit' } as never)).text).toBe('Mochi is now Biscuit.')
+  expect(await band($)).toContain("Hey Alex, I'm Biscuit, your new buddy!")
 })

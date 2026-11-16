@@ -146,6 +146,23 @@ export function forget(lib: Library, name: string): Change {
   }
 }
 
+/** /buddy-rename: gives the shown buddy a new name, keeping its place in the list. */
+export function rename(lib: Library, newName: string): Change {
+  const name = newName.trim()
+  if (!name) return { message: 'Say what to call it: /buddy-rename <new name>.' }
+  if (lib.current === BUILT_IN) return { message: `${CLAWD.name} is built in and keeps his name. Make your own with /buddy-make.` }
+  const old = currentOf(lib)
+  const key = keyOf(name)
+  if (key === BUILT_IN || (key !== lib.current && find(lib, key))) return { message: `There's already a buddy called ${name}.` }
+  const renamed = { ...old, name }
+  const errors = validate(renamed).errors
+  if (errors.length) return { message: errors.join(' ') }
+  return {
+    library: { ...lib, current: key, characters: lib.characters.map(c => (c === old ? renamed : c)) },
+    message: `${old.name} is now ${name}.`,
+  }
+}
+
 /** /buddy-dance: "on", "off", or nothing to switch. */
 export function setDance(lib: Library, arg: string): Change {
   const word = arg.trim().toLowerCase()

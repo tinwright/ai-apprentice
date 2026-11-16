@@ -28,6 +28,7 @@ Your buddy appears above the prompt by itself, in the desktop app, and as a smal
 - `/buddy-make <description>`: design a new buddy.
 - `/buddy-demo`: watch every mood, three seconds each.
 - `/buddy-use`: list your buddies; `/buddy-use <name>` switches to one. Clawd is always there.
+- `/buddy-rename <new name>`: give the buddy shown a new name.
 - `/buddy-forget <name>`: delete a buddy. The 12 newest are kept.
 - `/buddy-hello [your name]`: your buddy introduces itself again. It greets you by your computer's login name until you give it another.
 - `/buddy-dance`: your buddy dances whenever nothing else is going on; again to stop (or `/buddy-dance on` / `off`).

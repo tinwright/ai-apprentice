@@ -28,6 +28,7 @@ Votre compagnon apparaît tout seul au-dessus de la zone de saisie dans l'applic
 - `/buddy-make <description>` : créer un nouveau compagnon.
 - `/buddy-demo` : voir toutes ses humeurs, trois secondes chacune.
 - `/buddy-use` : lister vos compagnons ; `/buddy-use <nom>` passe à l'un d'eux. Clawd est toujours là.
+- `/buddy-rename <nouveau nom>` : donner un nouveau nom au compagnon affiché.
 - `/buddy-forget <nom>` : supprimer un compagnon. Les 12 plus récents sont conservés.
 - `/buddy-hello [votre prénom]` : votre compagnon se présente à nouveau. Il vous salue par votre nom de session tant que vous ne lui en donnez pas un autre.
 - `/buddy-dance` : votre compagnon danse dès qu'il ne se passe rien d'autre ; une seconde fois pour arrêter (ou `/buddy-dance on` / `off`).

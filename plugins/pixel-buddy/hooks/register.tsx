@@ -13,7 +13,7 @@ import type { Compiled } from './character'
 import { minis, minisWidth, scene, sceneSize } from './draw'
 import { portrait } from './terminal'
 import type { Pose } from './draw'
-import { SET_CHARACTER, TOOL_NAME, currentOf, forget, listing, load, save, setDance, use } from './library'
+import { SET_CHARACTER, TOOL_NAME, currentOf, forget, listing, load, rename, save, setDance, use } from './library'
 import type { Library } from './library'
 
 // ── State ──────────────────────────────────────────────────────────────────
@@ -258,6 +258,7 @@ export const register: Register = on => {
     const result = await next(e)
     await $.command.register({ name: 'buddy-demo', description: 'Watch your buddy go through all its moods' })
     await $.command.register({ name: 'buddy-use', description: 'List your buddies, or switch to one: /buddy-use <name>' })
+    await $.command.register({ name: 'buddy-rename', description: 'Give your buddy a new name: /buddy-rename <new name>' })
     await $.command.register({ name: 'buddy-forget', description: 'Delete a saved buddy: /buddy-forget <name>' })
     await $.command.register({ name: 'buddy-jump', description: 'Make your buddy jump as if a session just pinged you' })
     await $.command.register({ name: 'buddy-hello', description: 'Your buddy introduces itself again: /buddy-hello [your name]' })
@@ -356,6 +357,14 @@ export const register: Register = on => {
     const name = (e.args ?? '').trim()
     if (!name) return { text: listing(lib) }
     const r = use(lib, name)
+    if (!r.library) return { text: r.message }
+    await saveLibrary($, r.library)
+    await introduce($)
+    return { text: r.message }
+  })
+
+  on('command.run', { command: 'buddy-rename' }, async ($, e) => {
+    const r = rename(await loadLibrary($), e.args ?? '')
     if (!r.library) return { text: r.message }
     await saveLibrary($, r.library)
     await introduce($)

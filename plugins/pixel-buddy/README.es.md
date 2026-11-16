@@ -28,6 +28,7 @@ Tu compañero aparece solo sobre el cuadro de texto en la aplicación de escrito
 - `/buddy-make <descripción>`: diseñar un compañero nuevo.
 - `/buddy-demo`: ver todos sus estados de ánimo, tres segundos cada uno.
 - `/buddy-use`: listar tus compañeros; `/buddy-use <nombre>` cambia a uno. Clawd siempre está.
+- `/buddy-rename <nuevo nombre>`: cambiar el nombre del compañero que se muestra.
 - `/buddy-forget <nombre>`: borrar un compañero. Se conservan los 12 más recientes.
 - `/buddy-hello [tu nombre]`: tu compañero se vuelve a presentar. Te saluda con tu nombre de usuario del equipo hasta que le des otro.
 - `/buddy-dance`: tu compañero baila cuando no pasa nada más; otra vez para que pare (o `/buddy-dance on` / `off`).
