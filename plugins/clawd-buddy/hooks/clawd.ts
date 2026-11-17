@@ -72,12 +72,14 @@ export const px = (x: number, y: number, w = 1, h = 1, fill = BODY, cls = '') =>
   `<rect${cls ? ` class="${cls}"` : ''} x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`
 export const g = (cls: string, inner: string) => `<g class="${cls}">${inner}</g>`
 
-export type Eyes = 'open' | 'closed' | 'happy' | 'wide' | 'up' | 'down' | 'flat' | 'dot'
+export type Eyes = 'open' | 'closed' | 'happy' | 'wide' | 'up' | 'down' | 'flat' | 'dot' | 'none'
 
 export function eyes(kind: Eyes, shades: boolean): string {
   if (shades && (kind === 'open' || kind === 'down' || kind === 'up'))
     return px(2, 1, 3, 2, INK) + px(6, 1, 3, 2, INK) + px(5, 1, 1, 1, INK) + px(2, 1, 1, 1, '#FFFFFF').replace('/>', ' opacity=".45"/>')
   switch (kind) {
+    case 'none':
+      return ''
     case 'dot':
       return px(3, 1, 1, 1, INK) + px(7, 1, 1, 1, INK)
     case 'closed':
@@ -249,7 +251,7 @@ export const STYLE = `
   @keyframes sway{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(1px)}}
   ${STRETCH_CSS}
   .sweep{animation:sweep .9s steps(1) infinite}
-  @keyframes sweep{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(-2px)}}
+  @keyframes sweep{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(-1px)}}
   .dust{opacity:0;animation:dust .9s linear infinite}
   @keyframes dust{0%{opacity:.7;transform:translate(0,0)}100%{opacity:0;transform:translate(2px,-2px)}}
   .waveA{animation:waveA .9s steps(1) infinite}.waveB{animation:waveB .9s steps(1) infinite}
@@ -321,9 +323,10 @@ export function drawPose(pose: Pose, shades: boolean): string {
       return at(g('startle', clawd({ eyes: 'happy', armR: ARM_R + px(11, 0, 1, 2) })))
     case 'sweep':
       return at(
-        clawd({ eyes: 'down', armR: '' }) +
-          g('sweep', px(10, 2, 3, 1) + px(13, -1, 1, 6, BROWN) + px(12, 5, 3, 2, '#E3B36B')) +
-          px(16, 6, 1, 1, GRAY, 'dust') + px(10, 6, 1, 1, GRAY, 'dust'),
+        // From the pixel kit: both claws out on the broom handle, eyes on the broom.
+        clawd({ eyes: 'none', armL: '', armR: '' }) + px(4, 2, 1, 1, INK) + px(8, 2, 1, 1, INK) +
+          g('sweep', px(9.5, 1, 2.5, 1) + px(9.5, 3, 2.5, 1) + px(12, -1, 1, 6, BROWN) + px(11, 5, 3, 2, '#E3B36B')) +
+          px(15, 6, 1, 1, GRAY, 'dust') + px(10, 6, 1, 1, GRAY, 'dust'),
       )
     case 'wave':
       return at(clawd({ armR: g('waveA', px(10, 1, 2, 2) + px(11, -1, 1, 2)) + g('waveB', px(10, 1, 2, 2) + px(12, -1, 1, 2)), shades }))
