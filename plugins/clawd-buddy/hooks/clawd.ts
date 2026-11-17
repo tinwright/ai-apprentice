@@ -237,7 +237,7 @@ const MINI = `<g transform="scale(.5)">${clawd({ eyes: 'dot', armL: g('tapL', AR
 const MINI_TOP = `<g transform="scale(.5)">${clawd({ eyes: 'dot', armL: g('tapR', ARM_L), armR: g('tapL', ARM_R) })}</g>`
 function helperStack(count: number, x: number): string {
   if (count <= 0) return ''
-  const top = count > 1 ? `<g transform="translate(0 -3.5)">${MINI_TOP}</g>` : ''
+  const top = count > 1 ? `<g transform="translate(0 -4)">${MINI_TOP}</g>` : ''
   return `<g transform="translate(${x} ${OY + 3.5})">${MINI + top}</g>`
 }
 
