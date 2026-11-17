@@ -116,7 +116,7 @@ export const sandwich = () => px(0, 0, 3, 1, '#E3B36B') + px(0, 1, 3, 1, '#6DBE4
 // Every frame of the stretch, drawn in the pixel kit and copied here as-is:
 // 'o' is body, '#' is eye. A grid's top-left is at (-2, -3) in Clawd's own
 // coordinates (column 6, row 2 on a kit canvas).
-const STRETCH_GRIDS = {
+const STRETCH_DRAWN = {
   up1: ['...............', '...............', '...............', '...ooooooooo...', '.ooooooooooooo.', '.ooo##ooo##ooo.', '.ooooooooooooo.', '...ooooooooo...', '...o.o...o.o...', '...o.o...o.o...'],
   up2: ['...............', '...............', '...............', '.ooooooooooooo.', '.ooooooooooooo.', '.ooo##ooo##ooo.', '...ooooooooo...', '...ooooooooo...', '...o.o...o.o...', '...o.o...o.o...'],
   up3: ['...............', '...............', '.oo.........oo.', '.ooooooooooooo.', '.ooooooooooooo.', '...o##ooo##o...', '...ooooooooo...', '...ooooooooo...', '...o.o...o.o...', '...o.o...o.o...'],
@@ -124,9 +124,14 @@ const STRETCH_GRIDS = {
   leanA: ['........o......', '.........o.....', 'o.........o....', 'ooooooooooo....', 'ooooooooooo....', '.o##ooo##oo....', '.oooooooooo....', '.oooooooooo....', '.o.o....o.o....', '..o.o....o.o...'],
   reachA: ['........o......', '.........o.....', '..........o....', '.oooooooooo....', 'ooooooooooo....', 'oo##ooo##oo....', 'ooooooooooo....', '.oooooooooo....', '.o.o....o.o....', '..o.o....o.o...'],
   middle: ['...............', '..o.........o..', '..o.........o..', '..ooooooooooo..', '..ooooooooooo..', '...o##ooo##o...', '...ooooooooo...', '...ooooooooo...', '...o.o...o.o...', '...o.o...o.o...'],
-  leanB: ['.....o.........', '....o..........', '...o.........o.', '...ooooooooooo.', '...ooooooooooo.', '...oo##ooo##o..', '...oooooooooo..', '...oooooooooo..', '...o.o....o.o..', '..o.o....o.o...'],
-  reachB: ['.....o.........', '....o..........', '...o...........', '...oooooooooo..', '...ooooooooooo.', '...oo##ooo##oo.', '...ooooooooooo.', '...oooooooooo..', '...o.o....o.o..', '..o.o....o.o...'],
-} as const
+}
+// Leaning right is leaning left mirrored, so his feet land the same way.
+const mirror = (rows: readonly string[]) => rows.map(r => [...r].reverse().join(''))
+const STRETCH_GRIDS = {
+  ...STRETCH_DRAWN,
+  leanB: mirror(STRETCH_DRAWN.leanA),
+  reachB: mirror(STRETCH_DRAWN.reachA),
+}
 type StretchFrame = keyof typeof STRETCH_GRIDS
 
 // [frame, seconds, tall stretches while it shows]. Arms up quickly, one tall
