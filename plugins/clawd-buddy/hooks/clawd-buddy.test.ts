@@ -1,4 +1,4 @@
-import { expect, test } from 'claude-code/testing'
+import { expect, mock, test } from 'claude-code/testing'
 
 import { activityFor, choosePose, fridayAt, isPing, phaseAt, scene } from './clawd'
 
@@ -96,4 +96,34 @@ test('passing tests earn a ta-da, on every surface', async ($, on) => {
     expect((await ui.find({ type: 'Text', text: /ta-da/ }))?.text).toContain('ta-da!')
     await ui.unmount()
   }
+})
+
+test('a daytime doze shows a wake button, and pressing it wakes him', async ($, on) => {
+  const clock = mock.clock(on, { now: at(16, 15, 0) })
+  on('command.register', () => ({ value: { command: 'clawd-jump' } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await clock.advance(21 * 60_000)
+
+  for (const surface of ['terminal', 'desktop'] as const) {
+    const ui = await $.ui.mount({ ...BAND, surface })
+    expect((await ui.find({ type: 'Text', text: /dozing/ }))?.text).toContain('dozing')
+    await ui.press({ key: 'wake' })
+    expect(await ui.find({ type: 'Text', text: /dozing/ })).toBeUndefined()
+    expect(await ui.find({ key: 'wake' })).toBeUndefined()
+    await ui.unmount()
+    await clock.advance(21 * 60_000)
+  }
+})
+
+test('no wake button when he is asleep for the night', async ($, on) => {
+  const clock = mock.clock(on, { now: at(16, 23, 0) })
+  on('command.register', () => ({ value: { command: 'clawd-jump' } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+  await clock.advance(21 * 60_000)
+
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect(await ui.find({ key: 'wake' })).toBeUndefined()
+  await ui.unmount()
 })
