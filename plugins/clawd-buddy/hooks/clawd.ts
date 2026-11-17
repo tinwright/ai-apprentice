@@ -192,7 +192,11 @@ function stretchCss(): string {
   const tilt = ['0%{transform:skewX(0deg)}']
   t = 0
   for (const [frame, d] of STRETCH_STEPS) {
-    tilt.push(`${pct(t + d / 2)}{transform:skewX(${STRETCH_TILT[frame] ?? 0}deg)}`)
+    const deg = STRETCH_TILT[frame] ?? 0
+    // An upright frame stays upright from its first moment to its last, so
+    // the tilt never creeps into the tall stretches either side of it.
+    if (deg) tilt.push(`${pct(t + d / 2)}{transform:skewX(${deg}deg)}`)
+    else tilt.push(`${pct(t)}{transform:skewX(0deg)}`, `${pct(t + d)}{transform:skewX(0deg)}`)
     t += d
   }
   tilt.push('100%{transform:skewX(0deg)}')
