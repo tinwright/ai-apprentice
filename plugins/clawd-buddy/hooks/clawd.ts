@@ -112,6 +112,86 @@ export const steam = () =>
   `<rect class="steam" x="0.5" y="-2" width="1" height="1"/><rect class="steam s2" x="1.5" y="-2" width="1" height="1"/><rect class="steam s3" x="1" y="-3" width="1" height="1"/>`
 export const sandwich = () => px(0, 0, 3, 1, '#E3B36B') + px(0, 1, 3, 1, '#6DBE45') + px(0, 2, 3, 1, '#C0504D') + px(0, 3, 3, 1, '#E3B36B')
 
+// ── Stretch ────────────────────────────────────────────────────────────────
+// Every frame of the stretch, drawn in the pixel kit and copied here as-is:
+// 'o' is body, '#' is eye. A grid's top-left is at (-2, -3) in Clawd's own
+// coordinates (column 6, row 2 on a kit canvas).
+const STRETCH_GRIDS = {
+  up1: ['...............', '...............', '...............', '...ooooooooo...', '.ooooooooooooo.', '.ooo##ooo##ooo.', '.ooooooooooooo.', '...ooooooooo...', '...o.o...o.o...', '...o.o...o.o...'],
+  up2: ['...............', '...............', '...............', '.ooooooooooooo.', '.ooooooooooooo.', '.ooo##ooo##ooo.', '...ooooooooo...', '...ooooooooo...', '...o.o...o.o...', '...o.o...o.o...'],
+  up3: ['...............', '...............', '.oo.........oo.', '.ooooooooooooo.', '.ooooooooooooo.', '...o##ooo##o...', '...ooooooooo...', '...ooooooooo...', '...o.o...o.o...', '...o.o...o.o...'],
+  up4: ['..o.........o..', '..o.........o..', '..o.........o..', '..ooooooooooo..', '...ooooooooo...', '...o##ooo##o...', '...ooooooooo...', '...ooooooooo...', '...o.o...o.o...', '...o.o...o.o...'],
+  leanA: ['........o......', '.........o.....', 'o.........o....', 'ooooooooooo....', 'ooooooooooo....', '.o##ooo##oo....', '.oooooooooo....', '.oooooooooo....', '.o.o....o.o....', '..o.o....o.o...'],
+  reachA: ['........o......', '.........o.....', '..........o....', '.oooooooooo....', 'ooooooooooo....', 'oo##ooo##oo....', 'ooooooooooo....', '.oooooooooo....', '.o.o....o.o....', '..o.o....o.o...'],
+  middle: ['...............', '..o.........o..', '..o.........o..', '..ooooooooooo..', '..ooooooooooo..', '...o##ooo##o...', '...ooooooooo...', '...ooooooooo...', '...o.o...o.o...', '...o.o...o.o...'],
+  leanB: ['.....o.........', '....o..........', '...o.........o.', '...ooooooooooo.', '...ooooooooooo.', '...oo##ooo##o..', '...oooooooooo..', '...oooooooooo..', '...o.o....o.o..', '..o.o....o.o...'],
+  reachB: ['.....o.........', '....o..........', '...o...........', '...oooooooooo..', '...ooooooooooo.', '...oo##ooo##oo.', '...ooooooooooo.', '...oooooooooo..', '...o.o....o.o..', '..o.o....o.o...'],
+} as const
+type StretchFrame = keyof typeof STRETCH_GRIDS
+
+// [frame, seconds, tall stretches while it shows]. Arms up quickly, two tall
+// stretches, an over-the-head reach to each side, one more tall stretch, arms down.
+const STRETCH_STEPS: [StretchFrame, number, number][] = [
+  ['up1', 0.1, 0], ['up2', 0.1, 0], ['up3', 0.1, 0], ['up4', 2.4, 2],
+  ['leanA', 0.15, 0], ['reachA', 0.6, 0], ['leanA', 0.15, 0], ['middle', 0.15, 0],
+  ['leanB', 0.15, 0], ['reachB', 0.6, 0], ['leanB', 0.15, 0], ['middle', 0.15, 0],
+  ['up4', 1.2, 1], ['up3', 0.1, 0], ['up2', 0.1, 0], ['up1', 0.1, 0],
+]
+
+// One row-run of body per row; where the row below is body too, the run
+// reaches half a pixel down into it so no seam shows between rows.
+export function gridArt(rows: readonly string[]): string {
+  let out = ''
+  rows.forEach((row, y) => {
+    const below = rows[y + 1] ?? ''
+    for (let x = 0; x < row.length; ) {
+      if (row[x] === '.') { x++; continue }
+      let end = x
+      while (end < row.length && row[end] !== '.') end++
+      out += px(x, y, end - x, 1)
+      for (let a = x; a < end; ) {
+        if ((below[a] ?? '.') === '.') { a++; continue }
+        let b = a
+        while (b < end && (below[b] ?? '.') !== '.') b++
+        out += px(a, y + 0.5, b - a, 1)
+        a = b
+      }
+      x = end
+    }
+  })
+  rows.forEach((row, y) => [...row].forEach((c, x) => { if (c === '#') out += px(x, y, 1, 1, INK) }))
+  return out
+}
+
+function stretchCss(): string {
+  const total = STRETCH_STEPS.reduce((t, [, d]) => t + d, 0)
+  const pct = (t: number) => `${+((t / total) * 100).toFixed(3)}%`
+  const shown = new Map<StretchFrame, [number, number][]>()
+  const scale = ['0%{transform:scaleY(1)}']
+  let t = 0
+  for (const [frame, d, tall] of STRETCH_STEPS) {
+    shown.set(frame, [...(shown.get(frame) ?? []), [t, t + d]])
+    for (let k = 0; k < tall; k++) {
+      scale.push(`${pct(t + (k * d) / tall)}{transform:scaleY(1)}`, `${pct(t + ((k + 0.5) * d) / tall)}{transform:scaleY(1.12)}`)
+    }
+    if (tall) scale.push(`${pct(t + d)}{transform:scaleY(1)}`)
+    t += d
+  }
+  scale.push('100%{transform:scaleY(1)}')
+  let css = `.stretch{transform-origin:50% 100%;transform-box:fill-box;animation:stretch ${total}s ease-in-out infinite}@keyframes stretch{${scale.join('')}}`
+  for (const [frame, spans] of shown) {
+    const first = frame === STRETCH_STEPS[0]![0]
+    const marks = [`0%{opacity:${first ? 1 : 0}}`]
+    for (const [a, b] of spans) {
+      if (a > 0) marks.push(`${pct(a)}{opacity:1}`)
+      if (b < total) marks.push(`${pct(b)}{opacity:0}`)
+    }
+    css += `.sf-${frame}{opacity:${first ? 1 : 0};animation:sf-${frame} ${total}s steps(1) infinite}@keyframes sf-${frame}{${marks.join('')}}`
+  }
+  return css
+}
+const STRETCH_CSS = stretchCss()
+
 export const STYLE = `
   svg{overflow:visible}
   .blink{transform-origin:50% 25%;transform-box:fill-box;animation:blink 4.2s steps(1) infinite}
@@ -144,14 +224,7 @@ export const STYLE = `
   @keyframes startle{0%,49%{transform:translateY(-1px)}50%,100%{transform:translateY(0)}}
   .sway{animation:sway 1.2s steps(1) infinite}
   @keyframes sway{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(1px)}}
-  .stretch{transform-origin:50% 100%;transform-box:fill-box;animation:stretch 3s ease-in-out infinite}
-  @keyframes stretch{0%,10%{transform:scaleY(1)}30%{transform:scaleY(1.12)}50%{transform:scaleY(1)}70%{transform:scaleY(1.12)}90%,100%{transform:scaleY(1)}}
-  .st1,.st2,.st3,.st4{opacity:0;animation:3s steps(1) infinite}
-  .st1{opacity:1;animation-name:st1}.st2{animation-name:st2}.st3{animation-name:st3}.st4{animation-name:st4}
-  @keyframes st1{0%{opacity:1}3.33%{opacity:0}96.67%{opacity:1}}
-  @keyframes st2{0%{opacity:0}3.33%{opacity:1}6.67%{opacity:0}93.33%{opacity:1}96.67%{opacity:0}}
-  @keyframes st3{0%{opacity:0}6.67%{opacity:1}10%{opacity:0}90%{opacity:1}93.33%{opacity:0}}
-  @keyframes st4{0%{opacity:0}10%{opacity:1}90%{opacity:0}}
+  ${STRETCH_CSS}
   .sweep{animation:sweep .9s steps(1) infinite}
   @keyframes sweep{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(-2px)}}
   .dust{opacity:0;animation:dust .9s linear infinite}
@@ -219,13 +292,8 @@ export function drawPose(pose: Pose, shades: boolean): string {
     case 'proud':
       return at(g('sway', clawd({ eyes: 'happy', armL: px(-1, 1, 2, 1) + px(-2, 0, 1, 1), armR: px(10, 1, 2, 1) + px(12, 0, 1, 1) })))
     case 'stretch':
-      // Four frames from the pixel kit: arms rise a row at a time, then reach
-      // straight up while he stretches tall, then come back down.
-      return at(g('stretch', clawd({
-        eyes: 'closed',
-        armL: g('st1', px(-1, 1, 2, 3)) + g('st2', px(-1, 0, 2, 3)) + g('st3', px(-1, -1, 2, 3)) + g('st4', px(0, -3, 1, 4)),
-        armR: g('st1', px(10, 1, 2, 3)) + g('st2', px(10, 0, 2, 3)) + g('st3', px(10, -1, 2, 3)) + g('st4', px(10, -3, 1, 4)),
-      })))
+      return at(g('stretch', (Object.keys(STRETCH_GRIDS) as StretchFrame[])
+        .map(f => `<g class="sf-${f}" transform="translate(-2 -3)">${gridArt(STRETCH_GRIDS[f])}</g>`).join('')))
     case 'thumbs':
       return at(g('startle', clawd({ eyes: 'happy', armR: ARM_R + px(11, 0, 1, 2) })))
     case 'sweep':
