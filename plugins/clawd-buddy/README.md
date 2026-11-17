@@ -23,7 +23,7 @@ Clawd appears above the prompt by himself, in the desktop app (and as a one-line
 
 **When you're needed**: he waves when Claude needs your approval or asks you a question, and taps his foot if the question has waited a minute.
 
-**His day**: coffee from 8:00 to 10:30, a sandwich from 12:00 to 1:00, asleep from 10pm to 7am, dozing after 20 quiet minutes (press 👋 wake up beside him, or type, to wake him), and sunglasses on Friday afternoons. With hot coffee in hand he doesn't jump.
+**His day**: coffee from 8:00 to 10:30, a sandwich from 12:00 to 1:00, asleep from 10pm to 7am, dozing after 20 quiet minutes, and sunglasses on Friday afternoons. With hot coffee in hand he doesn't jump.
 
 **Pings**: he jumps when another Claude session sends this one a message.
 

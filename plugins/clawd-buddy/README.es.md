@@ -23,7 +23,7 @@ Clawd aparece solo encima del cuadro de texto en la aplicación de escritorio (y
 
 **Cuando te necesita**: te saluda cuando Claude espera tu aprobación o te hace una pregunta, y da golpecitos con el pie si la pregunta lleva un minuto esperando.
 
-**Su día**: café de 8:00 a 10:30, un sándwich de 12:00 a 13:00, dormido de 22:00 a 7:00, adormilado tras 20 minutos de calma (pulsa 👋 wake up a su lado, o escribe, para despertarlo) y gafas de sol los viernes por la tarde. Con un café caliente en la mano no salta.
+**Su día**: café de 8:00 a 10:30, un sándwich de 12:00 a 13:00, dormido de 22:00 a 7:00, adormilado tras 20 minutos de calma y gafas de sol los viernes por la tarde. Con un café caliente en la mano no salta.
 
 **Avisos**: salta cuando otra sesión de Claude envía un mensaje a esta.
 

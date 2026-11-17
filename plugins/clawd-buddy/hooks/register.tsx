@@ -293,24 +293,19 @@ export const register: Register = on => {
 
     let caption = pinged ? CAPTION.jump : CAPTION[pose]
     if (!caption && shades) caption = "it's Friday 😎"
-    // A daytime doze (not night-time sleep) can be ended with a press.
-    const dozing = base === 'sleep' && (await read($, isDozing)) && (await read($, phase)) !== 'sleep'
-    if (dozing) caption = 'dozing…'
+    if (base === 'sleep' && (await read($, isDozing)) && (await read($, phase)) !== 'sleep') caption = 'dozing…'
     if (helperCount > 0 && pose !== 'sleep') caption = [caption, `+ ${helperCount} helper${helperCount > 1 ? 's' : ''}`].filter(Boolean).join(' · ')
 
-    const { Box, Text, Svg, Button } = $.ui.resolve(e)
-    const wake = dozing ? <Button key="wake" label="👋 wake up" plain dimColor onPress={() => void touch($)} /> : null
-
     if (e.surface === 'terminal') {
-      const line = <Text color="#D97757">{'▐▛█▜▌ ' + (caption || 'clawd')}</Text>
-      return wake ? <Box flexDirection="row" gap={1}>{line}{wake}</Box> : line
+      const { Text } = $.ui.resolve(e)
+      return <Text color="#D97757">{'▐▛█▜▌ ' + (caption || 'clawd')}</Text>
     }
 
+    const { Box, Text, Svg } = $.ui.resolve(e)
     return (
       <Box flexDirection="row" alignItems="center">
         <Svg source={scene(pose, shades, helperCount)} alt={ALT[pose]} width={W * U} height={H * U} isInteractive />
         {caption ? <Text dimColor>{caption}</Text> : null}
-        {wake}
       </Box>
     )
   })
