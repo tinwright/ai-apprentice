@@ -129,10 +129,10 @@ const STRETCH_GRIDS = {
 } as const
 type StretchFrame = keyof typeof STRETCH_GRIDS
 
-// [frame, seconds, tall stretches while it shows]. Arms up quickly, two tall
-// stretches, an over-the-head reach to each side, one more tall stretch, arms down.
+// [frame, seconds, tall stretches while it shows]. Arms up quickly, one tall
+// stretch, an over-the-head reach to each side, one more tall stretch, arms down.
 const STRETCH_STEPS: [StretchFrame, number, number][] = [
-  ['up1', 0.1, 0], ['up2', 0.1, 0], ['up3', 0.1, 0], ['up4', 2.4, 2],
+  ['up1', 0.1, 0], ['up2', 0.1, 0], ['up3', 0.1, 0], ['up4', 2.4, 1],
   ['leanA', 0.15, 0], ['reachA', 0.6, 0], ['leanA', 0.15, 0], ['middle', 0.15, 0],
   ['leanB', 0.15, 0], ['reachB', 0.6, 0], ['leanB', 0.15, 0], ['middle', 0.15, 0],
   ['up4', 1.2, 1], ['up3', 0.1, 0], ['up2', 0.1, 0], ['up1', 0.1, 0],
