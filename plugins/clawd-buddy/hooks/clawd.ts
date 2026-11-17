@@ -144,14 +144,14 @@ export const STYLE = `
   @keyframes startle{0%,49%{transform:translateY(-1px)}50%,100%{transform:translateY(0)}}
   .sway{animation:sway 1.2s steps(1) infinite}
   @keyframes sway{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(1px)}}
-  .stretch{transform-origin:50% 100%;transform-box:fill-box;animation:stretch 2.8s ease-in-out infinite}
-  @keyframes stretch{0%,21%{transform:scaleY(1)}50%{transform:scaleY(1.12)}79%,100%{transform:scaleY(1)}}
-  .st1,.st2,.st3,.st4{opacity:0;animation:2.8s steps(1) infinite}
+  .stretch{transform-origin:50% 100%;transform-box:fill-box;animation:stretch 3s ease-in-out infinite}
+  @keyframes stretch{0%,10%{transform:scaleY(1)}30%{transform:scaleY(1.12)}50%{transform:scaleY(1)}70%{transform:scaleY(1.12)}90%,100%{transform:scaleY(1)}}
+  .st1,.st2,.st3,.st4{opacity:0;animation:3s steps(1) infinite}
   .st1{opacity:1;animation-name:st1}.st2{animation-name:st2}.st3{animation-name:st3}.st4{animation-name:st4}
-  @keyframes st1{0%{opacity:1}7%{opacity:0}93%{opacity:1}}
-  @keyframes st2{0%{opacity:0}7%{opacity:1}14%{opacity:0}86%{opacity:1}93%{opacity:0}}
-  @keyframes st3{0%{opacity:0}14%{opacity:1}21%{opacity:0}79%{opacity:1}86%{opacity:0}}
-  @keyframes st4{0%{opacity:0}21%{opacity:1}79%{opacity:0}}
+  @keyframes st1{0%{opacity:1}3.33%{opacity:0}96.67%{opacity:1}}
+  @keyframes st2{0%{opacity:0}3.33%{opacity:1}6.67%{opacity:0}93.33%{opacity:1}96.67%{opacity:0}}
+  @keyframes st3{0%{opacity:0}6.67%{opacity:1}10%{opacity:0}90%{opacity:1}93.33%{opacity:0}}
+  @keyframes st4{0%{opacity:0}10%{opacity:1}90%{opacity:0}}
   .sweep{animation:sweep .9s steps(1) infinite}
   @keyframes sweep{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(-2px)}}
   .dust{opacity:0;animation:dust .9s linear infinite}
