@@ -55,7 +55,7 @@ export const PUSH_RE = /\bgit\s+push\b/
 
 // ── Pixel art ──────────────────────────────────────────────────────────────
 export const U = 3.5 // px per pixel
-export const W = 32
+export const W = 36
 export const H = 13
 export const OX = 12
 export const OY = 5 // Clawd's top-left in the scene
@@ -72,12 +72,14 @@ export const px = (x: number, y: number, w = 1, h = 1, fill = BODY, cls = '') =>
   `<rect${cls ? ` class="${cls}"` : ''} x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`
 export const g = (cls: string, inner: string) => `<g class="${cls}">${inner}</g>`
 
-export type Eyes = 'open' | 'closed' | 'happy' | 'wide' | 'up' | 'down' | 'flat'
+export type Eyes = 'open' | 'closed' | 'happy' | 'wide' | 'up' | 'down' | 'flat' | 'dot'
 
 export function eyes(kind: Eyes, shades: boolean): string {
   if (shades && (kind === 'open' || kind === 'down' || kind === 'up'))
     return px(2, 1, 3, 2, INK) + px(6, 1, 3, 2, INK) + px(5, 1, 1, 1, INK) + px(2, 1, 1, 1, '#FFFFFF').replace('/>', ' opacity=".45"/>')
   switch (kind) {
+    case 'dot':
+      return px(3, 1, 1, 1, INK) + px(7, 1, 1, 1, INK)
     case 'closed':
       return px(2, 2, 2, 1, INK) + px(7, 2, 2, 1, INK)
     case 'happy':
@@ -114,7 +116,10 @@ export const STYLE = `
   svg{overflow:visible}
   .blink{transform-origin:50% 25%;transform-box:fill-box;animation:blink 4.2s steps(1) infinite}
   @keyframes blink{0%,94%{transform:scaleY(1)}95%,99%{transform:scaleY(.15)}}
-  .bob{animation:bob 1.4s steps(1) infinite}.bob2{animation:bob 1.4s steps(1) .7s infinite}
+  .bob{animation:bob 1.4s steps(1) infinite}
+  .hopB{animation:hopB 3s steps(1) infinite}.hopT{animation:hopT 3s steps(1) 1.5s infinite}
+  @keyframes hopB{0%,69%{transform:translateY(0)}70%,79%{transform:translateY(-1px)}80%,89%{transform:translateY(-1.5px)}90%,100%{transform:translateY(0)}}
+  @keyframes hopT{0%,69%{transform:translateY(0)}70%,79%{transform:translateY(-1px)}80%,89%{transform:translateY(-1.5px)}90%,100%{transform:translateY(0)}}
   @keyframes bob{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-1px)}}
   .breathe{transform-origin:50% 100%;transform-box:fill-box;animation:breathe 3.6s ease-in-out infinite}
   @keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.9)}}
@@ -229,15 +234,21 @@ export function drawPose(pose: Pose, shades: boolean): string {
   }
 }
 
+// Helpers stand to Clawd's right: one on the ground, a second on his head.
+// The bottom one's hop carries the top one; the top one also hops alone.
+const MINI = `<g transform="scale(.5)">${clawd({ eyes: 'dot' })}</g>`
+function helperStack(count: number, x: number): string {
+  if (count <= 0) return ''
+  const top = count > 1 ? `<g transform="translate(0 -3.5)">${g('hopT', MINI)}</g>` : ''
+  return `<g transform="translate(${x} ${OY + 3.5})">${g('hopB', MINI + top)}</g>`
+}
+
 export function scene(pose: Pose, shades: boolean, helperCount: number): string {
   const ground = `<rect x="2" y="${OY + 7}" width="${W - 4}" height="1" fill="${INK}" opacity=".18"/>`
   const minis =
     pose === 'sleep'
       ? ''
-      : [24.5, 0.5]
-          .slice(0, Math.min(helperCount, 2))
-          .map((x, i) => `<g transform="translate(${x} ${OY + 3.5}) scale(.5)">${g(i ? 'bob' : 'bob2', clawd({ eyes: 'down', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R) }))}</g>`)
-          .join('')
+      : helperStack(Math.min(helperCount, 2), pose === 'typing' ? 24.5 : 28.5)
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W * U}" height="${H * U}" shape-rendering="crispEdges">` +
     `<style>${STYLE}</style>${ground}${drawPose(pose, shades)}${minis}</svg>`
