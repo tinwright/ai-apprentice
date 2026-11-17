@@ -144,8 +144,14 @@ export const STYLE = `
   @keyframes startle{0%,49%{transform:translateY(-1px)}50%,100%{transform:translateY(0)}}
   .sway{animation:sway 1.2s steps(1) infinite}
   @keyframes sway{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(1px)}}
-  .stretch{transform-origin:50% 100%;transform-box:fill-box;animation:stretch 2.6s ease-in-out infinite}
-  @keyframes stretch{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.12)}}
+  .stretch{transform-origin:50% 100%;transform-box:fill-box;animation:stretch 3.6s ease-in-out infinite}
+  @keyframes stretch{0%,36%{transform:scaleY(1)}58%{transform:scaleY(1.12)}80%,100%{transform:scaleY(1)}}
+  .st1,.st2,.st3,.st4{opacity:0;animation:3.6s steps(1) infinite}
+  .st1{opacity:1;animation-name:st1}.st2{animation-name:st2}.st3{animation-name:st3}.st4{animation-name:st4}
+  @keyframes st1{0%{opacity:1}12%{opacity:0}94%{opacity:1}}
+  @keyframes st2{0%{opacity:0}12%{opacity:1}24%{opacity:0}87%{opacity:1}94%{opacity:0}}
+  @keyframes st3{0%{opacity:0}24%{opacity:1}36%{opacity:0}80%{opacity:1}87%{opacity:0}}
+  @keyframes st4{0%{opacity:0}36%{opacity:1}80%{opacity:0}}
   .sweep{animation:sweep .9s steps(1) infinite}
   @keyframes sweep{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(-2px)}}
   .dust{opacity:0;animation:dust .9s linear infinite}
@@ -213,7 +219,13 @@ export function drawPose(pose: Pose, shades: boolean): string {
     case 'proud':
       return at(g('sway', clawd({ eyes: 'happy', armL: px(-1, 1, 2, 1) + px(-2, 0, 1, 1), armR: px(10, 1, 2, 1) + px(12, 0, 1, 1) })))
     case 'stretch':
-      return at(g('stretch', clawd({ eyes: 'closed', armL: px(0, -3, 1, 4), armR: px(10, -3, 1, 4) })))
+      // Four frames from the pixel kit: arms rise a row at a time, then reach
+      // straight up while he stretches tall, then come back down.
+      return at(g('stretch', clawd({
+        eyes: 'closed',
+        armL: g('st1', px(-1, 1, 2, 3)) + g('st2', px(-1, 0, 2, 3)) + g('st3', px(-1, -1, 2, 3)) + g('st4', px(0, -3, 1, 4)),
+        armR: g('st1', px(10, 1, 2, 3)) + g('st2', px(10, 0, 2, 3)) + g('st3', px(10, -1, 2, 3)) + g('st4', px(10, -3, 1, 4)),
+      })))
     case 'thumbs':
       return at(g('startle', clawd({ eyes: 'happy', armR: ARM_R + px(11, 0, 1, 2) })))
     case 'sweep':
