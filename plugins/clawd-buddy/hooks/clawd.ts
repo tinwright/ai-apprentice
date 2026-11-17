@@ -233,8 +233,15 @@ export function drawPose(pose: Pose, shades: boolean): string {
 
 // Helpers stand to Clawd's right: one on the ground, a second on his head.
 // They stand still and wiggle their arms, each in turn.
-const MINI = `<g transform="scale(.5)">${clawd({ eyes: 'dot', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R) })}</g>`
-const MINI_TOP = `<g transform="scale(.5)">${clawd({ eyes: 'dot', armL: g('tapR', ARM_L), armR: g('tapL', ARM_R) })}</g>`
+// At half size, parts that only touch can show hairline seams, so a helper's
+// arms and legs reach half a pixel into his body.
+const MINI_ARM_L = px(-1, 2, 2.5, 2)
+const MINI_ARM_R = px(9.5, 2, 2.5, 2)
+const MINI_LEGS = px(1, 4.5, 1, 2.5) + px(3, 4.5, 1, 2.5) + px(7, 4.5, 1, 2.5) + px(9, 4.5, 1, 2.5)
+const mini = (left: string, right: string) =>
+  `<g transform="scale(.5)">${clawd({ eyes: 'dot', armL: g(left, MINI_ARM_L), armR: g(right, MINI_ARM_R), legs: MINI_LEGS })}</g>`
+const MINI = mini('tapL', 'tapR')
+const MINI_TOP = mini('tapR', 'tapL')
 function helperStack(count: number, x: number): string {
   if (count <= 0) return ''
   const top = count > 1 ? `<g transform="translate(0 -4)">${MINI_TOP}</g>` : ''
