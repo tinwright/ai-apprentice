@@ -240,7 +240,7 @@ export function drawPose(pose: Pose, shades: boolean): string {
 const MINI_SCALE = 4 / 7
 const MINI_ARM_L = px(-1, 2, 2.5, 2)
 const MINI_ARM_R = px(9.5, 2, 2.5, 2)
-const MINI_LEGS = px(1, 4.5, 1, 2.5) + px(4, 4.5, 1, 2.5) + px(6, 4.5, 1, 2.5) + px(9, 4.5, 1, 2.5)
+const MINI_LEGS = px(1, 4.5, 1, 2.5) + px(3.5, 4.5, 1, 2.5) + px(6.5, 4.5, 1, 2.5) + px(9, 4.5, 1, 2.5)
 const mini = (left: string, right: string) =>
   `<g class="mini" transform="scale(${MINI_SCALE})">${clawd({ eyes: 'dot', armL: g(left, MINI_ARM_L), armR: g(right, MINI_ARM_R), legs: MINI_LEGS })}</g>`
 const MINI = mini('tapL', 'tapR')
