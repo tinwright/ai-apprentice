@@ -102,6 +102,7 @@ export const register: Register = on => {
     await $.command.register({ name: 'clawd-jump', description: 'Make Clawd jump as if a session just pinged you' })
     await $.command.register({ name: 'clawd-coffee', description: 'Give Clawd a cup of coffee for a little while' })
     await $.command.register({ name: 'clawd-demo', description: 'Watch Clawd cycle through all his moods' })
+    await $.command.register({ name: 'clawd-nap', description: 'Let Clawd doze off now, as if 20 quiet minutes had passed' })
 
     running.clear()
     await update($, activity, () => 'none')
@@ -134,6 +135,12 @@ export const register: Register = on => {
   on('command.run', { command: 'clawd-coffee' }, async $ => {
     await coffeeBreak($)
     return { text: 'Clawd is enjoying a coffee ☕' }
+  })
+
+  on('command.run', { command: 'clawd-nap' }, async $ => {
+    lastActive = (await $.clock.now()) - DOZE_AFTER_MS - 1
+    await update($, isDozing, () => true)
+    return { text: 'Clawd is dozing off… 💤' }
   })
 
   on('command.run', { command: 'clawd-demo' }, async $ => {

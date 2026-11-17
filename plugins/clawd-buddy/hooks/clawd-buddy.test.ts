@@ -127,3 +127,16 @@ test('no wake button when he is asleep for the night', async ($, on) => {
   expect(await ui.find({ key: 'wake' })).toBeUndefined()
   await ui.unmount()
 })
+
+test('/clawd-nap sends him to doze straight away', async ($, on) => {
+  mock.clock(on, { now: at(16, 15, 0) })
+  on('command.register', () => ({ value: { command: 'clawd-nap' } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const { text } = await $.command.run({ command: 'clawd-nap' })
+  expect(text).toContain('dozing')
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect(await ui.find({ key: 'wake' })).toBeDefined()
+  await ui.unmount()
+})
