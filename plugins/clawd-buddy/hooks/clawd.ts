@@ -135,12 +135,13 @@ const STRETCH_GRIDS = {
 type StretchFrame = keyof typeof STRETCH_GRIDS
 
 // [frame, seconds, tall stretches while it shows]. Arms up quickly, one tall
-// stretch, an over-the-head reach to each side, one more tall stretch, arms down.
+// stretch, an over-the-head reach to each side, one more tall stretch, arms down
+// and a rest before it starts again.
 const STRETCH_STEPS: [StretchFrame, number, number][] = [
   ['up1', 0.1, 0], ['up2', 0.1, 0], ['up3', 0.1, 0], ['up4', 2.4, 1],
   ['leanA', 0.15, 0], ['reachA', 0.6, 0], ['leanA', 0.15, 0], ['middle', 0.15, 0],
   ['leanB', 0.15, 0], ['reachB', 0.6, 0], ['leanB', 0.15, 0], ['middle', 0.15, 0],
-  ['up4', 1.2, 1], ['up3', 0.1, 0], ['up2', 0.1, 0], ['up1', 0.1, 0],
+  ['up4', 1.2, 1], ['up3', 0.1, 0], ['up2', 0.1, 0], ['up1', 1.5, 0],
 ]
 
 // One row-run of body per row; where the row below is body too, the run
