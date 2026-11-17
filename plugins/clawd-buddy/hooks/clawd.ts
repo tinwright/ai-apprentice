@@ -117,9 +117,6 @@ export const STYLE = `
   .blink{transform-origin:50% 25%;transform-box:fill-box;animation:blink 4.2s steps(1) infinite}
   @keyframes blink{0%,94%{transform:scaleY(1)}95%,99%{transform:scaleY(.15)}}
   .bob{animation:bob 1.4s steps(1) infinite}
-  .hopB{animation:hopB 3s steps(1) infinite}.hopT{animation:hopT 3s steps(1) 1.5s infinite}
-  @keyframes hopB{0%,69%{transform:translateY(0)}70%,79%{transform:translateY(-1px)}80%,89%{transform:translateY(-1.5px)}90%,100%{transform:translateY(0)}}
-  @keyframes hopT{0%,69%{transform:translateY(0)}70%,79%{transform:translateY(-1px)}80%,89%{transform:translateY(-1.5px)}90%,100%{transform:translateY(0)}}
   @keyframes bob{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-1px)}}
   .breathe{transform-origin:50% 100%;transform-box:fill-box;animation:breathe 3.6s ease-in-out infinite}
   @keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.9)}}
@@ -235,12 +232,13 @@ export function drawPose(pose: Pose, shades: boolean): string {
 }
 
 // Helpers stand to Clawd's right: one on the ground, a second on his head.
-// The bottom one's hop carries the top one; the top one also hops alone.
-const MINI = `<g transform="scale(.5)">${clawd({ eyes: 'dot' })}</g>`
+// They stand still and wiggle their arms, each in turn.
+const MINI = `<g transform="scale(.5)">${clawd({ eyes: 'dot', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R) })}</g>`
+const MINI_TOP = `<g transform="scale(.5)">${clawd({ eyes: 'dot', armL: g('tapR', ARM_L), armR: g('tapL', ARM_R) })}</g>`
 function helperStack(count: number, x: number): string {
   if (count <= 0) return ''
-  const top = count > 1 ? `<g transform="translate(0 -3.5)">${g('hopT', MINI)}</g>` : ''
-  return `<g transform="translate(${x} ${OY + 3.5})">${g('hopB', MINI + top)}</g>`
+  const top = count > 1 ? `<g transform="translate(0 -3.5)">${MINI_TOP}</g>` : ''
+  return `<g transform="translate(${x} ${OY + 3.5})">${MINI + top}</g>`
 }
 
 export function scene(pose: Pose, shades: boolean, helperCount: number): string {
