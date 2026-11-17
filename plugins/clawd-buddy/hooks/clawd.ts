@@ -169,6 +169,9 @@ export function gridArt(rows: readonly string[]): string {
   return out
 }
 
+// Degrees he tilts in each frame; positive leans his top to the left.
+const STRETCH_TILT: Partial<Record<StretchFrame, number>> = { leanA: 3, reachA: 6, leanB: -3, reachB: -6 }
+
 function stretchCss(): string {
   const total = STRETCH_STEPS.reduce((t, [, d]) => t + d, 0)
   const pct = (t: number) => `${+((t / total) * 100).toFixed(3)}%`
@@ -184,7 +187,17 @@ function stretchCss(): string {
     t += d
   }
   scale.push('100%{transform:scaleY(1)}')
+  // He tilts toward each side as he reaches: a little on the lean, most at
+  // full reach, eased between the middle of each frame.
+  const tilt = ['0%{transform:skewX(0deg)}']
+  t = 0
+  for (const [frame, d] of STRETCH_STEPS) {
+    tilt.push(`${pct(t + d / 2)}{transform:skewX(${STRETCH_TILT[frame] ?? 0}deg)}`)
+    t += d
+  }
+  tilt.push('100%{transform:skewX(0deg)}')
   let css = `.stretch{transform-origin:50% 100%;transform-box:fill-box;animation:stretch ${total}s ease-in-out infinite}@keyframes stretch{${scale.join('')}}`
+  css += `.tilt{transform-origin:50% 100%;transform-box:fill-box;animation:tilt ${total}s ease-in-out infinite}@keyframes tilt{${tilt.join('')}}`
   for (const [frame, spans] of shown) {
     const first = frame === STRETCH_STEPS[0]![0]
     const marks = [`0%{opacity:${first ? 1 : 0}}`]
@@ -298,8 +311,8 @@ export function drawPose(pose: Pose, shades: boolean): string {
     case 'proud':
       return at(g('sway', clawd({ eyes: 'happy', armL: px(-1, 1, 2, 1) + px(-2, 0, 1, 1), armR: px(10, 1, 2, 1) + px(12, 0, 1, 1) })))
     case 'stretch':
-      return at(g('stretch', (Object.keys(STRETCH_GRIDS) as StretchFrame[])
-        .map(f => `<g class="sf-${f}" transform="translate(-2 -3)">${gridArt(STRETCH_GRIDS[f])}</g>`).join('')))
+      return at(g('stretch', g('tilt', (Object.keys(STRETCH_GRIDS) as StretchFrame[])
+        .map(f => `<g class="sf-${f}" transform="translate(-2 -3)">${gridArt(STRETCH_GRIDS[f])}</g>`).join(''))))
     case 'thumbs':
       return at(g('startle', clawd({ eyes: 'happy', armR: ARM_R + px(11, 0, 1, 2) })))
     case 'sweep':
