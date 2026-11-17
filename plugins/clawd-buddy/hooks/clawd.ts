@@ -233,19 +233,24 @@ export function drawPose(pose: Pose, shades: boolean): string {
 
 // Helpers stand to Clawd's right: one on the ground, a second on his head.
 // They stand still and wiggle their arms, each in turn.
-// At half size, parts that only touch can show hairline seams, so a helper's
-// arms and legs reach half a pixel into his body.
+// A helper pixel is 4/7 of Clawd's, which is a whole 2 screen pixels in the
+// app (Clawd's are 3.5), and every helper sits on whole screen pixels, so no
+// leg or arm rounds to a different size. Arms and legs still reach half a
+// helper pixel into the body so nothing can show a seam.
+const MINI_SCALE = 4 / 7
 const MINI_ARM_L = px(-1, 2, 2.5, 2)
 const MINI_ARM_R = px(9.5, 2, 2.5, 2)
-const MINI_LEGS = px(1, 4.5, 1, 2.5) + px(3, 4.5, 1, 2.5) + px(7, 4.5, 1, 2.5) + px(9, 4.5, 1, 2.5)
+const MINI_LEGS = px(1, 4.5, 1, 2.5) + px(4, 4.5, 1, 2.5) + px(6, 4.5, 1, 2.5) + px(9, 4.5, 1, 2.5)
 const mini = (left: string, right: string) =>
-  `<g transform="scale(.5)">${clawd({ eyes: 'dot', armL: g(left, MINI_ARM_L), armR: g(right, MINI_ARM_R), legs: MINI_LEGS })}</g>`
+  `<g class="mini" transform="scale(${MINI_SCALE})">${clawd({ eyes: 'dot', armL: g(left, MINI_ARM_L), armR: g(right, MINI_ARM_R), legs: MINI_LEGS })}</g>`
 const MINI = mini('tapL', 'tapR')
 const MINI_TOP = mini('tapR', 'tapL')
+const MINI_HEIGHT = 7 * MINI_SCALE // helper pixels from head to feet
 function helperStack(count: number, x: number): string {
   if (count <= 0) return ''
-  const top = count > 1 ? `<g transform="translate(0 -4)">${MINI_TOP}</g>` : ''
-  return `<g transform="translate(${x} ${OY + 3.5})">${MINI + top}</g>`
+  // the top helper stands one helper pixel above the bottom one's head
+  const top = count > 1 ? `<g transform="translate(0 ${-8 * MINI_SCALE})">${MINI_TOP}</g>` : ''
+  return `<g transform="translate(${x} ${OY + 7 - MINI_HEIGHT})">${MINI + top}</g>`
 }
 
 export function scene(pose: Pose, shades: boolean, helperCount: number): string {
@@ -253,7 +258,7 @@ export function scene(pose: Pose, shades: boolean, helperCount: number): string 
   const minis =
     pose === 'sleep'
       ? ''
-      : helperStack(Math.min(helperCount, 2), pose === 'typing' ? 24.5 : 28.5)
+      : helperStack(Math.min(helperCount, 2), pose === 'typing' ? 172 / 7 : 200 / 7)
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W * U}" height="${H * U}" shape-rendering="crispEdges">` +
     `<style>${STYLE}</style>${ground}${drawPose(pose, shades)}${minis}</svg>`
