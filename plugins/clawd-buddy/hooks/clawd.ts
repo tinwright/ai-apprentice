@@ -114,6 +114,28 @@ export const steam = () =>
   `<rect class="steam" x="0.5" y="-2" width="1" height="1"/><rect class="steam s2" x="1.5" y="-2" width="1" height="1"/><rect class="steam s3" x="1" y="-3" width="1" height="1"/>`
 export const sandwich = () => px(0, 0, 3, 1, '#E3B36B') + px(0, 1, 3, 1, '#6DBE45') + px(0, 2, 3, 1, '#C0504D') + px(0, 3, 3, 1, '#E3B36B')
 
+// ── Search ─────────────────────────────────────────────────────────────────
+// From the pixel kit: the magnifying glass slides in over his eye a pixel at a
+// time ('l' is lens, his eye showing big through it), he blinks behind it,
+// and it slides back out. A grid's top-left is at (-2, -1) in Clawd's own
+// coordinates (column 6, row 4 on a kit canvas).
+const SEARCH_GRIDS = {
+  f0: ['..............llll.', '...ooooooooo..llll.', '...oo#ooo#oo..llll.', '.ooooooooooooollll.', '.oooooooooooow.....', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
+  f1: ['.............llll..', '...ooooooooo.llll..', '...oo#ooo#oo.llll..', '.oooooooooooollll..', '.oooooooooooow.....', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
+  f2: ['............llll...', '...ooooooooollll...', '...oo#ooo#oollll...', '.ooooooooooollll...', '.oooooooooooow.....', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
+  f3: ['...........llll....', '...oooooooollll....', '...oo#ooo#ollll....', '.oooooooooollll....', '.ooooooooooowo.....', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
+  f4: ['..........llll.....', '...ooooooololl.....', '...oo#ooo#loll.....', '.ooooooooollll.....', '.ooooooooooowo.....', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
+  f5: ['.........llll......', '...ooooool#ol......', '...oo#oool#ol......', '.oooooooollllo.....', '.ooooooooooowo.....', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
+  f6: ['........llll.......', '...oooool##l.......', '...oo#ool##l.......', '.ooooooollllo......', '.oooooooooowo......', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
+  blink: ['........llll.......', '...ooooollll.......', '...oo#ool##l.......', '.ooooooollllo......', '.oooooooooowo......', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
+} as const
+type SearchFrame = keyof typeof SEARCH_GRIDS
+const SEARCH_STEPS: [SearchFrame, number][] = [
+  ['f0', 0.8], ['f1', 0.1], ['f2', 0.1], ['f3', 0.1], ['f4', 0.1], ['f5', 0.1],
+  ['f6', 0.7], ['blink', 0.15], ['f6', 0.7],
+  ['f5', 0.1], ['f4', 0.1], ['f3', 0.1], ['f2', 0.1], ['f1', 0.1],
+]
+
 // ── Stretch ────────────────────────────────────────────────────────────────
 // Every frame of the stretch, drawn in the pixel kit and copied here as-is:
 // 'o' is body, '#' is eye. A grid's top-left is at (-2, -3) in Clawd's own
@@ -146,8 +168,8 @@ const STRETCH_STEPS: [StretchFrame, number, number][] = [
   ['up4', 1.2, 1], ['up3', 0.1, 0], ['up2', 0.1, 0], ['up1', 1.5, 0],
 ]
 
-// Kit grids: 'o' body, '#' eye, 'w' broom handle, 'b' bristles, '.' empty.
-const GRID_COLOURS: Record<string, string> = { o: BODY, '#': BODY, w: BROWN, b: '#E3B36B' }
+// Kit grids: 'o' body, '#' eye, 'w' handle, 'b' bristles, 'l' lens, '.' empty.
+const GRID_COLOURS: Record<string, string> = { o: BODY, '#': BODY, w: BROWN, b: '#E3B36B', l: '#BFE3F2' }
 const material = (c: string | undefined) => (c === '#' ? 'o' : c ?? '.')
 
 // One run per row for each colour; where the row below is the same colour,
@@ -254,6 +276,7 @@ const SWEEP_STEPS: [SweepFrame, number][] = [
   ['in1', 0.15], ['in2', 0.15], ['flat', 0.15], ['out1', 0.15], ['out2', 0.15], ['rest', 0.15],
 ]
 const SWEEP_CSS = framesCss('sw', SWEEP_STEPS)
+const SEARCH_CSS = framesCss('se', SEARCH_STEPS)
 
 export const STYLE = `
   svg{overflow:visible}
@@ -278,10 +301,6 @@ export const STYLE = `
   @keyframes tap{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(1px)}}
   .scribble{animation:scribble .6s steps(1) infinite}
   @keyframes scribble{0%,32%{transform:translate(0,0)}33%,65%{transform:translate(1px,0)}66%,100%{transform:translate(1px,1px)}}
-  .scan{animation:scan 2.4s steps(1) infinite}
-  @keyframes scan{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(-1px)}}
-  .look{animation:look 2.4s steps(1) infinite}
-  @keyframes look{0%,49%{transform:translateX(1px)}50%,100%{transform:translateX(-1px)}}
   .d1,.d2,.d3{opacity:0;animation:dot 1.8s steps(1) infinite}.d2{animation-delay:.3s}.d3{animation-delay:.6s}
   @keyframes dot{0%,19%{opacity:0}20%,85%{opacity:1}86%,100%{opacity:0}}
   .startle{animation:startle .5s steps(1) 2}
@@ -290,6 +309,7 @@ export const STYLE = `
   @keyframes sway{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(1px)}}
   ${STRETCH_CSS}
   ${SWEEP_CSS}
+  ${SEARCH_CSS}
   .dust{opacity:0;animation:dust .9s linear infinite}
   @keyframes dust{0%{opacity:.7;transform:translate(0,0)}100%{opacity:0;transform:translate(2px,-2px)}}
   .waveA{animation:waveA .9s steps(1) infinite}.waveB{animation:waveB .9s steps(1) infinite}
@@ -340,10 +360,9 @@ export function drawPose(pose: Pose, shades: boolean): string {
           g('scribble', ARM_R + px(12, 1, 1, 2, GOLD) + px(12, 3, 1, 1, INK)),
       )
     case 'searching':
-      return at(
-        px(1, 0, 9, 5) + ARM_L + LEGS + (shades ? eyes('open', true) : g('look', g('blink', px(3, 1, 1, 2, INK) + px(7, 1, 1, 2, INK)))) +
-          g('scan', ARM_R + px(12, 2, 1, 1, BROWN) + px(12, -1, 3, 1, '#C8CDD8') + px(12, 1, 3, 1, '#C8CDD8') + px(12, 0, 1, 1, '#C8CDD8') + px(14, 0, 1, 1, '#C8CDD8') + px(13, 0, 1, 1, '#BFE3F2')),
-      )
+      // Frames from the pixel kit; his blink is one of them.
+      return at((Object.keys(SEARCH_GRIDS) as SearchFrame[])
+        .map(f => `<g class="se-${f}" transform="translate(-2 -1)">${gridArt(SEARCH_GRIDS[f])}</g>`).join(''))
     case 'thinking':
       return at(
         clawd({ eyes: 'up', shades }) +
