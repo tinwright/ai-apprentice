@@ -116,7 +116,7 @@ export const sandwich = () => px(0, 0, 3, 1, '#E3B36B') + px(0, 1, 3, 1, '#6DBE4
 
 // ── Search ─────────────────────────────────────────────────────────────────
 // From the pixel kit: the magnifying glass slides in over his eye a pixel at a
-// time ('l' is lens, his eye showing big through it), he blinks behind it,
+// time ('l' is lens, his eye showing big through it), he blinks twice,
 // and it slides back out. A grid's top-left is at (-2, -1) in Clawd's own
 // coordinates (column 6, row 4 on a kit canvas).
 const SEARCH_GRIDS = {
@@ -127,13 +127,13 @@ const SEARCH_GRIDS = {
   f4: ['..........llll.....', '...ooooooololl.....', '...oo#ooo#loll.....', '.ooooooooollll.....', '.ooooooooooowo.....', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
   f5: ['.........llll......', '...ooooool#ol......', '...oo#oool#ol......', '.oooooooollllo.....', '.ooooooooooowo.....', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
   f6: ['........llll.......', '...oooool##l.......', '...oo#ool##l.......', '.ooooooollllo......', '.oooooooooowo......', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
-  blink: ['........llll.......', '...ooooollll.......', '...oo#ool##l.......', '.ooooooollllo......', '.oooooooooowo......', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
+  blink: ['........llll.......', '...ooooollll.......', '...oocool##l.......', '.ooooooollllo......', '.oooooooooowo......', '...ooooooooo.......', '...o.o...o.o.......', '...o.o...o.o.......'],
 } as const
 type SearchFrame = keyof typeof SEARCH_GRIDS
 const SEARCH_STEPS: [SearchFrame, number][] = [
-  ['f0', 0.8], ['f1', 0.1], ['f2', 0.1], ['f3', 0.1], ['f4', 0.1], ['f5', 0.1],
-  ['f6', 0.7], ['blink', 0.15], ['f6', 0.7],
-  ['f5', 0.1], ['f4', 0.1], ['f3', 0.1], ['f2', 0.1], ['f1', 0.1],
+  ['f0', 0.8], ['f1', 0.05], ['f2', 0.05], ['f3', 0.05], ['f4', 0.05], ['f5', 0.05],
+  ['f6', 0.7], ['blink', 0.15], ['f6', 0.15], ['blink', 0.15], ['f6', 0.7],
+  ['f5', 0.05], ['f4', 0.05], ['f3', 0.05], ['f2', 0.05], ['f1', 0.05],
 ]
 
 // ── Stretch ────────────────────────────────────────────────────────────────
@@ -168,9 +168,9 @@ const STRETCH_STEPS: [StretchFrame, number, number][] = [
   ['up4', 1.2, 1], ['up3', 0.1, 0], ['up2', 0.1, 0], ['up1', 1.5, 0],
 ]
 
-// Kit grids: 'o' body, '#' eye, 'w' handle, 'b' bristles, 'l' lens, '.' empty.
+// Kit grids: 'o' body, '#' eye, 'c' closed eye, 'w' handle, 'b' bristles, 'l' lens, '.' empty.
 const GRID_COLOURS: Record<string, string> = { o: BODY, '#': BODY, w: BROWN, b: '#E3B36B', l: '#BFE3F2' }
-const material = (c: string | undefined) => (c === '#' ? 'o' : c ?? '.')
+const material = (c: string | undefined) => (c === '#' || c === 'c' ? 'o' : c ?? '.')
 
 // One run per row for each colour; where the row below is the same colour,
 // the run reaches half a pixel down into it so no seam shows between rows.
@@ -197,7 +197,10 @@ export function gridArt(rows: readonly string[], blink = false): string {
     }
   })
   let eyes = ''
-  rows.forEach((row, y) => [...row].forEach((c, x) => { if (c === '#') eyes += px(x, y, 1, 1, INK) }))
+  rows.forEach((row, y) => [...row].forEach((c, x) => {
+    if (c === '#') eyes += px(x, y, 1, 1, INK)
+    if (c === 'c') out += px(x, y + 0.7, 1, 0.3, INK) // a shut eye: a thin line at its bottom
+  }))
   return out + (blink && eyes ? g('blink', eyes) : eyes)
 }
 
