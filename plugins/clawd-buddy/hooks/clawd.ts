@@ -131,7 +131,7 @@ const SEARCH_GRIDS = {
 } as const
 type SearchFrame = keyof typeof SEARCH_GRIDS
 const SEARCH_STEPS: [SearchFrame, number][] = [
-  ['f0', 0.8], ['f1', 0.05], ['f2', 0.05], ['f3', 0.05], ['f4', 0.05], ['f5', 0.05],
+  ['f0', 1.6], ['f1', 0.05], ['f2', 0.05], ['f3', 0.05], ['f4', 0.05], ['f5', 0.05],
   ['f6', 0.7], ['blink', 0.15], ['f6', 0.15], ['blink', 0.15], ['f6', 0.7],
   ['f5', 0.05], ['f4', 0.05], ['f3', 0.05], ['f2', 0.05], ['f1', 0.05],
 ]
