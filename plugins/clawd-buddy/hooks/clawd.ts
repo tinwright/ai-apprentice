@@ -146,22 +146,29 @@ const STRETCH_STEPS: [StretchFrame, number, number][] = [
   ['up4', 1.2, 1], ['up3', 0.1, 0], ['up2', 0.1, 0], ['up1', 1.5, 0],
 ]
 
-// One row-run of body per row; where the row below is body too, the run
-// reaches half a pixel down into it so no seam shows between rows.
+// Kit grids: 'o' body, '#' eye, 'w' broom handle, 'b' bristles, '.' empty.
+const GRID_COLOURS: Record<string, string> = { o: BODY, '#': BODY, w: BROWN, b: '#E3B36B' }
+const material = (c: string | undefined) => (c === '#' ? 'o' : c ?? '.')
+
+// One run per row for each colour; where the row below is the same colour,
+// the run reaches half a pixel down into it so no seam shows between rows.
+// Eyes are drawn on top of the body afterwards.
 export function gridArt(rows: readonly string[]): string {
   let out = ''
   rows.forEach((row, y) => {
     const below = rows[y + 1] ?? ''
     for (let x = 0; x < row.length; ) {
-      if (row[x] === '.') { x++; continue }
+      const m = material(row[x])
+      if (m === '.') { x++; continue }
       let end = x
-      while (end < row.length && row[end] !== '.') end++
-      out += px(x, y, end - x, 1)
+      while (end < row.length && material(row[end]) === m) end++
+      const fill = GRID_COLOURS[m] ?? BODY
+      out += px(x, y, end - x, 1, fill)
       for (let a = x; a < end; ) {
-        if ((below[a] ?? '.') === '.') { a++; continue }
+        if (material(below[a]) !== m) { a++; continue }
         let b = a
-        while (b < end && (below[b] ?? '.') !== '.') b++
-        out += px(a, y + 0.5, b - a, 1)
+        while (b < end && material(below[b]) === m) b++
+        out += px(a, y + 0.5, b - a, 1, fill)
         a = b
       }
       x = end
@@ -171,17 +178,39 @@ export function gridArt(rows: readonly string[]): string {
   return out
 }
 
+// Shows one frame at a time in a loop: [frame, seconds] steps, each frame a
+// group with class `${prefix}-${frame}`. The first step's frame shows at rest.
+function framesCss(prefix: string, steps: readonly (readonly [string, number])[]): string {
+  const total = steps.reduce((t, [, d]) => t + d, 0)
+  const pct = (t: number) => `${+((t / total) * 100).toFixed(3)}%`
+  const shown = new Map<string, [number, number][]>()
+  let t = 0
+  for (const [frame, d] of steps) {
+    shown.set(frame, [...(shown.get(frame) ?? []), [t, t + d]])
+    t += d
+  }
+  let css = ''
+  for (const [frame, spans] of shown) {
+    const first = frame === steps[0]![0]
+    const marks = [`0%{opacity:${first ? 1 : 0}}`]
+    for (const [a, b] of spans) {
+      if (a > 0) marks.push(`${pct(a)}{opacity:1}`)
+      if (b < total) marks.push(`${pct(b)}{opacity:0}`)
+    }
+    css += `.${prefix}-${frame}{opacity:${first ? 1 : 0};animation:${prefix}-${frame} ${total}s steps(1) infinite}@keyframes ${prefix}-${frame}{${marks.join('')}}`
+  }
+  return css
+}
+
 // Degrees he tilts in each frame; positive leans his top to the left.
 const STRETCH_TILT: Partial<Record<StretchFrame, number>> = { leanA: 3, reachA: 6, leanB: -3, reachB: -6 }
 
 function stretchCss(): string {
   const total = STRETCH_STEPS.reduce((t, [, d]) => t + d, 0)
   const pct = (t: number) => `${+((t / total) * 100).toFixed(3)}%`
-  const shown = new Map<StretchFrame, [number, number][]>()
   const scale = ['0%{transform:scaleY(1)}']
   let t = 0
-  for (const [frame, d, tall] of STRETCH_STEPS) {
-    shown.set(frame, [...(shown.get(frame) ?? []), [t, t + d]])
+  for (const [, d, tall] of STRETCH_STEPS) {
     for (let k = 0; k < tall; k++) {
       scale.push(`${pct(t + (k * d) / tall)}{transform:scaleY(1)}`, `${pct(t + ((k + 0.5) * d) / tall)}{transform:scaleY(1.12)}`)
     }
@@ -204,18 +233,26 @@ function stretchCss(): string {
   tilt.push('100%{transform:skewX(0deg)}')
   let css = `.stretch{transform-origin:50% 100%;transform-box:fill-box;animation:stretch ${total}s ease-in-out infinite}@keyframes stretch{${scale.join('')}}`
   css += `.tilt{transform-origin:50% 100%;transform-box:fill-box;animation:tilt ${total}s ease-in-out infinite}@keyframes tilt{${tilt.join('')}}`
-  for (const [frame, spans] of shown) {
-    const first = frame === STRETCH_STEPS[0]![0]
-    const marks = [`0%{opacity:${first ? 1 : 0}}`]
-    for (const [a, b] of spans) {
-      if (a > 0) marks.push(`${pct(a)}{opacity:1}`)
-      if (b < total) marks.push(`${pct(b)}{opacity:0}`)
-    }
-    css += `.sf-${frame}{opacity:${first ? 1 : 0};animation:sf-${frame} ${total}s steps(1) infinite}@keyframes sf-${frame}{${marks.join('')}}`
-  }
-  return css
+  return css + framesCss('sf', STRETCH_STEPS.map(([f, d]) => [f, d] as const))
 }
 const STRETCH_CSS = stretchCss()
+
+// ── Sweep ──────────────────────────────────────────────────────────────────
+// The broom stroke, six frames from the pixel kit. A grid's top-left is at
+// (0, -1) in Clawd's own coordinates (column 8, row 4 on a kit canvas).
+const SWEEP_GRIDS = {
+  in1: ['...........w..', '.ooooooooo.w..', '.oooooooooow..', '.ooo#ooo#o.w..', '.oooooooooow..', '.ooooooooo.w..', '.o.o...o.obbb.', '.o.o...o.o.bbb'],
+  in2: ['..........w...', '.ooooooooow...', '.ooooooooow...', '.ooo#ooo#ow...', '.ooooooooow...', '.ooooooooow...', '.o.o...o.bbb..', '.o.o...o.obbb.'],
+  flat: ['..........w...', '.ooooooooow...', '.ooooooooow...', '.ooo#ooo#ow...', '.ooooooooow...', '.ooooooooow...', '.o.o...o.bbb..', '.o.o...obbbb..'],
+  out1: ['...........w..', '.ooooooooo.w..', '.oooooooooow..', '.ooo#ooo#o.w..', '.oooooooooow..', '.ooooooooo.w..', '.o.o...o.obbb.', '.o.o...o.bbb..'],
+  out2: ['............w.', '.ooooooooo..w.', '.ooooooooooow.', '.ooo#ooo#o..w.', '.ooooooooooow.', '.ooooooooo..w.', '.o.o...o.o.bbb', '.o.o...o.obbb.'],
+  rest: ['............w.', '.ooooooooo..w.', '.ooooooooooow.', '.ooo#ooo#o..w.', '.ooooooooooow.', '.ooooooooo..w.', '.o.o...o.o.bbb', '.o.o...o.o.bbb'],
+} as const
+type SweepFrame = keyof typeof SWEEP_GRIDS
+const SWEEP_STEPS: [SweepFrame, number][] = [
+  ['in1', 0.15], ['in2', 0.15], ['flat', 0.15], ['out1', 0.15], ['out2', 0.15], ['rest', 0.15],
+]
+const SWEEP_CSS = framesCss('sw', SWEEP_STEPS)
 
 export const STYLE = `
   svg{overflow:visible}
@@ -250,8 +287,7 @@ export const STYLE = `
   .sway{animation:sway 1.2s steps(1) infinite}
   @keyframes sway{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(1px)}}
   ${STRETCH_CSS}
-  .sweep{animation:sweep .9s steps(1) infinite}
-  @keyframes sweep{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(-1px)}}
+  ${SWEEP_CSS}
   .dust{opacity:0;animation:dust .9s linear infinite}
   @keyframes dust{0%{opacity:.7;transform:translate(0,0)}100%{opacity:0;transform:translate(2px,-2px)}}
   .waveA{animation:waveA .9s steps(1) infinite}.waveB{animation:waveB .9s steps(1) infinite}
@@ -323,9 +359,8 @@ export function drawPose(pose: Pose, shades: boolean): string {
       return at(g('startle', clawd({ eyes: 'happy', armR: ARM_R + px(11, 0, 1, 2) })))
     case 'sweep':
       return at(
-        // From the pixel kit: both claws out on the broom handle, eyes on the broom.
-        clawd({ eyes: 'none', armL: '', armR: '' }) + px(4, 2, 1, 1, INK) + px(8, 2, 1, 1, INK) +
-          g('sweep', px(9.5, 1, 2.5, 1) + px(9.5, 3, 2.5, 1) + px(12, -1, 1, 6, BROWN) + px(11, 5, 3, 2, '#E3B36B')) +
+        (Object.keys(SWEEP_GRIDS) as SweepFrame[])
+          .map(f => `<g class="sw-${f}" transform="translate(0 -1)">${gridArt(SWEEP_GRIDS[f])}</g>`).join('') +
           px(15, 6, 1, 1, GRAY, 'dust') + px(10, 6, 1, 1, GRAY, 'dust'),
       )
     case 'wave':
