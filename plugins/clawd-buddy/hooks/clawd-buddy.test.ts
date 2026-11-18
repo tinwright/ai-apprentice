@@ -67,9 +67,9 @@ test('waiting on the person comes first, then reactions, then work, then the tim
 test('the drawing is an svg with a mini Clawd per helper', () => {
   const svg = scene('typing', false, 2)
   expect(svg.startsWith('<svg')).toBe(true)
-  expect(svg.match(/class="mini"/g)?.length).toBe(2)
-  expect(scene('typing', false, 1).match(/class="mini"/g)?.length).toBe(1)
-  expect(scene('sleep', false, 2).includes('class="mini"')).toBe(false)
+  expect(svg.match(/class="mini[ "]/g)?.length).toBe(2)
+  expect(scene('typing', false, 1).match(/class="mini[ "]/g)?.length).toBe(1)
+  expect(scene('sleep', false, 2).includes('class="mini')).toBe(false)
 })
 
 test('/clawd-jump makes him jump in the band above the prompt', async ($, on) => {

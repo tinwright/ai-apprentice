@@ -81,15 +81,15 @@ export function eyes(kind: Eyes, shades: boolean): string {
     case 'none':
       return ''
     case 'dot':
-      return px(3, 1, 1, 1, INK) + px(7, 1, 1, 1, INK)
+      return g('blink', px(3, 1, 1, 1, INK) + px(7, 1, 1, 1, INK))
     case 'closed':
       return px(2, 2, 2, 1, INK) + px(7, 2, 2, 1, INK)
     case 'happy':
       return px(2, 2, 1, 1, INK) + px(3, 1, 1, 1, INK) + px(4, 2, 1, 1, INK) + px(6, 2, 1, 1, INK) + px(7, 1, 1, 1, INK) + px(8, 2, 1, 1, INK)
     case 'wide':
-      return px(2, 1, 2, 2, INK) + px(7, 1, 2, 2, INK)
+      return g('blink', px(2, 1, 2, 2, INK) + px(7, 1, 2, 2, INK))
     case 'up':
-      return px(4, 1, 1, 1, INK) + px(8, 1, 1, 1, INK)
+      return g('blink', px(4, 1, 1, 1, INK) + px(8, 1, 1, 1, INK))
     case 'down':
       return g('blink', px(3, 2, 1, 2, INK) + px(7, 2, 1, 2, INK))
     case 'flat':
@@ -153,7 +153,7 @@ const material = (c: string | undefined) => (c === '#' ? 'o' : c ?? '.')
 // One run per row for each colour; where the row below is the same colour,
 // the run reaches half a pixel down into it so no seam shows between rows.
 // Eyes are drawn on top of the body afterwards.
-export function gridArt(rows: readonly string[]): string {
+export function gridArt(rows: readonly string[], blink = false): string {
   let out = ''
   rows.forEach((row, y) => {
     const below = rows[y + 1] ?? ''
@@ -174,8 +174,9 @@ export function gridArt(rows: readonly string[]): string {
       x = end
     }
   })
-  rows.forEach((row, y) => [...row].forEach((c, x) => { if (c === '#') out += px(x, y, 1, 1, INK) }))
-  return out
+  let eyes = ''
+  rows.forEach((row, y) => [...row].forEach((c, x) => { if (c === '#') eyes += px(x, y, 1, 1, INK) }))
+  return out + (blink && eyes ? g('blink', eyes) : eyes)
 }
 
 // Shows one frame at a time in a loop: [frame, seconds] steps, each frame a
@@ -258,6 +259,7 @@ export const STYLE = `
   svg{overflow:visible}
   .blink{transform-origin:50% 25%;transform-box:fill-box;animation:blink 4.2s steps(1) infinite}
   @keyframes blink{0%,94%{transform:scaleY(1)}95%,99%{transform:scaleY(.15)}}
+  .mini .blink{animation-delay:-1.4s}.mini-top .blink{animation-delay:-2.8s}
   .bob{animation:bob 1.4s steps(1) infinite}
   @keyframes bob{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-1px)}}
   .breathe{transform-origin:50% 100%;transform-box:fill-box;animation:breathe 3.6s ease-in-out infinite}
@@ -339,7 +341,7 @@ export function drawPose(pose: Pose, shades: boolean): string {
       )
     case 'searching':
       return at(
-        px(1, 0, 9, 5) + ARM_L + LEGS + (shades ? eyes('open', true) : g('look', px(3, 1, 1, 2, INK) + px(7, 1, 1, 2, INK))) +
+        px(1, 0, 9, 5) + ARM_L + LEGS + (shades ? eyes('open', true) : g('look', g('blink', px(3, 1, 1, 2, INK) + px(7, 1, 1, 2, INK)))) +
           g('scan', ARM_R + px(12, 2, 1, 1, BROWN) + px(12, -1, 3, 1, '#C8CDD8') + px(12, 1, 3, 1, '#C8CDD8') + px(12, 0, 1, 1, '#C8CDD8') + px(14, 0, 1, 1, '#C8CDD8') + px(13, 0, 1, 1, '#BFE3F2')),
       )
     case 'thinking':
@@ -360,7 +362,7 @@ export function drawPose(pose: Pose, shades: boolean): string {
     case 'sweep':
       return at(
         (Object.keys(SWEEP_GRIDS) as SweepFrame[])
-          .map(f => `<g class="sw-${f}" transform="translate(0 -1)">${gridArt(SWEEP_GRIDS[f])}</g>`).join('') +
+          .map(f => `<g class="sw-${f}" transform="translate(0 -1)">${gridArt(SWEEP_GRIDS[f], true)}</g>`).join('') +
           px(15, 6, 1, 1, GRAY, 'dust') + px(10, 6, 1, 1, GRAY, 'dust'),
       )
     case 'wave':
@@ -382,10 +384,10 @@ const MINI_SCALE = 4 / 7
 const MINI_ARM_L = px(-1, 2, 2.5, 2)
 const MINI_ARM_R = px(9.5, 2, 2.5, 2)
 const MINI_LEGS = px(1, 4.5, 1, 2.5) + px(3.5, 4.5, 1, 2.5) + px(6.5, 4.5, 1, 2.5) + px(9, 4.5, 1, 2.5)
-const mini = (left: string, right: string) =>
-  `<g class="mini" transform="scale(${MINI_SCALE})">${clawd({ eyes: 'dot', armL: g(left, MINI_ARM_L), armR: g(right, MINI_ARM_R), legs: MINI_LEGS })}</g>`
+const mini = (left: string, right: string, cls = 'mini') =>
+  `<g class="${cls}" transform="scale(${MINI_SCALE})">${clawd({ eyes: 'dot', armL: g(left, MINI_ARM_L), armR: g(right, MINI_ARM_R), legs: MINI_LEGS })}</g>`
 const MINI = mini('tapL', 'tapR')
-const MINI_TOP = mini('tapR', 'tapL')
+const MINI_TOP = mini('tapR', 'tapL', 'mini mini-top')
 const MINI_HEIGHT = 7 * MINI_SCALE // helper pixels from head to feet
 function helperStack(count: number, x: number): string {
   if (count <= 0) return ''
