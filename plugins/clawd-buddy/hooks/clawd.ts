@@ -170,8 +170,17 @@ const TADA_STEPS: [TadaFrame, number][] = [
   ['land', 0.06], ['angle', 0.05], ['wide', 0.05],
   ['rest', 1.4], // back on the ground, while the last of the star dust fades
 ]
-// Star dust cells, in the same grid coordinates.
-const TADA_STARS: [number, number][] = [[1, 1], [18, 1], [0, 2], [1, 2], [2, 2], [1, 3], [19, 4], [2, 5], [18, 5], [19, 5], [20, 5], [19, 6]]
+// Star dust: two four-point sparkles with bright centres that twinkle between
+// long and short points, and two specks, set out to either side of him (in
+// the same grid coordinates; the kit's crosses sat two pixels closer in).
+const SPARKLE_SHINE = '#FFF4D6'
+const sparkle = (cx: number, cy: number, arm: number) =>
+  px(cx - arm, cy, arm, 1, GOLD) + px(cx + 1, cy, arm, 1, GOLD) +
+  px(cx, cy - arm, 1, arm, GOLD) + px(cx, cy + 1, 1, arm, GOLD) + px(cx, cy, 1, 1, SPARKLE_SHINE)
+const TADA_SPARKLES =
+  g('twA', sparkle(-1, 2, 2) + sparkle(21, 5, 2)) +
+  g('twB', sparkle(-1, 2, 1) + sparkle(21, 5, 1)) +
+  g('twB', px(20, 0, 1, 1, GOLD)) + g('twA', px(1, 6, 1, 1, GOLD))
 // The dust bursts out the moment he jumps, stays bright while he lands, then
 // fades slowly and smoothly away while he stands back on the ground.
 function tadaStarsCss(): string {
@@ -452,6 +461,9 @@ export const STYLE = `
   ${SEARCH_CSS}
   ${WRITE_CSS}
   ${TADA_CSS}
+  .twA{animation:twA .3s steps(1) infinite}.twB{opacity:0;animation:twB .3s steps(1) infinite}
+  @keyframes twA{0%,49%{opacity:1}50%,100%{opacity:0}}
+  @keyframes twB{0%,49%{opacity:0}50%,100%{opacity:1}}
   ${YOOHOO_CSS}
   ${WAVE_CSS}
   .dust{opacity:0;animation:dust .9s linear infinite}
@@ -525,7 +537,7 @@ export function drawPose(pose: Pose, shades: boolean): string {
       return at(
         `<g transform="translate(-5 -4)">` +
           (Object.keys(TADA_GRIDS) as TadaFrame[]).map(f => g(`td-${f}`, gridArt(TADA_GRIDS[f], true))).join('') +
-          g('tdstars', TADA_STARS.map(([x, y]) => px(x, y, 1, 1, GOLD)).join('')) +
+          g('tdstars', TADA_SPARKLES) +
           `</g>`,
       )
     case 'stretch':
