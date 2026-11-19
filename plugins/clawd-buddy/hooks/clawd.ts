@@ -536,7 +536,10 @@ export function drawPose(pose: Pose, shades: boolean): string {
       // Frames from the pixel kit, with the star dust on its own layer.
       return at(
         `<g transform="translate(-5 -4)">` +
-          (Object.keys(TADA_GRIDS) as TadaFrame[]).map(f => g(`td-${f}`, gridArt(TADA_GRIDS[f], true))).join('') +
+          (Object.keys(TADA_GRIDS) as TadaFrame[])
+            // the jump itself goes a pixel higher than drawn in the kit
+            .map(f => g(`td-${f}`, f === 'jump' ? `<g transform="translate(0 -1)">${gridArt(TADA_GRIDS[f], true)}</g>` : gridArt(TADA_GRIDS[f], true)))
+            .join('') +
           g('tdstars', TADA_SPARKLES) +
           `</g>`,
       )
