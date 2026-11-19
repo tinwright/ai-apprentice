@@ -165,7 +165,9 @@ const TADA_GRIDS = {
 type TadaFrame = keyof typeof TADA_GRIDS
 const TADA_STEPS: [TadaFrame, number][] = [
   ['rest', 0.3], ['squash', 0.12], ['rest', 0.1], ['wide', 0.1], ['angle', 0.1], ['up', 0.1],
-  ['crouch', 0.12], ['jump', 0.12], ['land', 0.12], ['angle', 0.1], ['wide', 0.1],
+  ['crouch', 0.12], ['jump', 0.12],
+  // gravity: he drops back down in half the time he took to go up
+  ['land', 0.06], ['angle', 0.05], ['wide', 0.05],
   ['rest', 1.4], // back on the ground, while the last of the star dust fades
 ]
 // Star dust cells, in the same grid coordinates.
