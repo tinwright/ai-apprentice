@@ -146,6 +146,30 @@ const WAVE_GRIDS = Object.fromEntries(
   ]),
 ) as Record<YoohooFrame, string[]>
 
+// ── Writing ────────────────────────────────────────────────────────────────
+// From the pixel kit: he brings the pencil ('y', its tip 'k') across from his
+// left side to the paper ('p', lines 'g'), with his arm in shadow ('d'),
+// scribbles three times round, then takes it back the way it came.
+// A grid's top-left is at (0, 0) in Clawd's own coordinates (column 8, row 5
+// on a kit canvas).
+const WRITE_GRIDS = {
+  in1: ['.ooooooooo.pppp', '.ooooooooo.pggp', 'yooo#ooo#oopppp', 'oyooooooooopggp', '.okooooooo.pppp', '.o.o...o.o.....', '.o.o...o.o.....'],
+  in2: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oyo#ooo#oopppp', '.odyooooooopggp', '.oookooooo.pppp', '.o.o...o.o.....', '.o.o...o.o.....'],
+  in3: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooyooo#oopppp', '.ooddyooooopggp', '.oooookooo.pppp', '.o.o...o.o.....', '.o.o...o.o.....'],
+  in4: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.ooo#oooo#opppp', '.oooooooooopggp', '.ooodddyyk.pppp', '.o.o...o.o.....', '.o.o...o.o.....'],
+  sc1: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooo#ooo#opppp', '.oooooooooopggp', '.ooooodddoyykpp', '.o.o...o.o.....', '.o.o...o.o.....'],
+  sc2: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooo#ooo#opppp', '.oooooooddyykgp', '.oooooodoo.pppp', '.o.o...o.o.....', '.o.o...o.o.....'],
+  sc3: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooo#ooooopppp', '.ooooooooodyykp', '.ooooooddd.pppp', '.o.o...o.o.....', '.o.o...o.o.....'],
+  sc4: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooo#ooo#opppp', '.oooooooooopggp', '.ooooooddddyykp', '.o.o...o.o.....', '.o.o...o.o.....'],
+} as const
+type WriteFrame = keyof typeof WRITE_GRIDS
+const SCRIBBLE: [WriteFrame, number][] = [['sc1', 0.12], ['sc2', 0.12], ['sc3', 0.12], ['sc4', 0.12]]
+const WRITE_STEPS: [WriteFrame, number][] = [
+  ['in1', 0.6], ['in2', 0.1], ['in3', 0.1], ['in4', 0.1],
+  ...SCRIBBLE, ...SCRIBBLE, ...SCRIBBLE,
+  ['in4', 0.1], ['in3', 0.1], ['in2', 0.1],
+]
+
 // ── Search ─────────────────────────────────────────────────────────────────
 // From the pixel kit: the magnifying glass slides in over his eye a pixel at a
 // time ('l' is lens, his eye showing big through it), he blinks twice,
@@ -201,8 +225,12 @@ const STRETCH_STEPS: [StretchFrame, number, number][] = [
 ]
 
 // Kit grids: 'o' body, '#' eye, 'c' closed eye, 'w' handle, 'b' bristles, 'l' lens,
-// 'n' notification dot, '.' empty.
-const GRID_COLOURS: Record<string, string> = { o: BODY, '#': BODY, w: BROWN, b: '#E3B36B', l: '#BFE3F2', n: '#3A4DDF' }
+// 'n' notification dot, 'd' arm in shadow, 'y' pencil, 'k' pencil tip, 'p' paper,
+// 'g' lines on the paper, '.' empty.
+const GRID_COLOURS: Record<string, string> = {
+  o: BODY, '#': BODY, w: BROWN, b: '#E3B36B', l: '#BFE3F2', n: '#3A4DDF',
+  d: '#B96144', y: GOLD, k: INK, p: '#F4EFE6', g: '#B9B4AC',
+}
 const material = (c: string | undefined) => (c === '#' || c === 'c' ? 'o' : c ?? '.')
 
 // One run per row for each colour; where the row below is the same colour,
@@ -337,6 +365,7 @@ const SWEEP_STEPS: [SweepFrame, number][] = [
 ]
 const SWEEP_CSS = framesCss('sw', SWEEP_STEPS)
 const SEARCH_CSS = framesCss('se', SEARCH_STEPS)
+const WRITE_CSS = framesCss('wr', WRITE_STEPS)
 const YOOHOO_CSS = framesCss('yh', YOOHOO_STEPS)
 const WAVE_CSS = framesCss('wv', YOOHOO_STEPS)
 
@@ -371,6 +400,7 @@ export const STYLE = `
   ${OOPS_LEG_CSS}
   ${SWEEP_CSS}
   ${SEARCH_CSS}
+  ${WRITE_CSS}
   ${YOOHOO_CSS}
   ${WAVE_CSS}
   .dust{opacity:0;animation:dust .9s linear infinite}
@@ -421,11 +451,9 @@ export function drawPose(pose: Pose, shades: boolean): string {
           px(-4, 2, 1, 4, '#8A8A86') + px(-3, 6, 4, 1, '#8A8A86'),
       )
     case 'writing':
-      return at(
-        clawd({ eyes: 'down', armR: '', shades }) +
-          px(12, 0, 4, 5, '#F4EFE6') + px(13, 1, 2, 1, '#B9B4AC') + px(13, 3, 2, 1, '#B9B4AC') +
-          g('scribble', ARM_R + px(12, 1, 1, 2, GOLD) + px(12, 3, 1, 1, INK)),
-      )
+      // Frames from the pixel kit; his eyes blink, the pencil's tip does not.
+      return at((Object.keys(WRITE_GRIDS) as WriteFrame[])
+        .map(f => `<g class="wr-${f}">${gridArt(WRITE_GRIDS[f], true)}</g>`).join(''))
     case 'searching':
       // Frames from the pixel kit; his blink is one of them.
       return at((Object.keys(SEARCH_GRIDS) as SearchFrame[])
