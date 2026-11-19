@@ -410,11 +410,11 @@ export const STYLE = `
   @keyframes key1{0%,40.2%{opacity:1}40.3%,100%{opacity:0}}
   @keyframes key2{0%,40.2%{opacity:0}40.3%,59.6%{opacity:1}59.7%,100%{opacity:0}}
   @keyframes key3{0%,59.6%{opacity:0}59.7%,100%{opacity:1}}
-  .foot{animation:foot .6s steps(1) infinite}
+  .foot{animation:foot .95s steps(1) infinite}
   @keyframes foot{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-1px)}}
   .tick{animation:tick 2.4s steps(1) infinite}
   @keyframes tick{0%,24%{transform:translate(0,0)}25%,49%{transform:translate(1px,1px)}50%,74%{transform:translate(0,2px)}75%,100%{transform:translate(-1px,1px)}}
-  .stompL,.stompR{opacity:0;animation:.6s linear infinite}.stompL{animation-name:stompL}.stompR{animation-name:stompR}
+  .stompL,.stompR{opacity:0;animation:.95s linear infinite}.stompL{animation-name:stompL}.stompR{animation-name:stompR}
   @keyframes stompL{0%{opacity:.85;transform:translate(0,0)}35%{opacity:0;transform:translate(-1px,-1px)}100%{opacity:0}}
   @keyframes stompR{0%{opacity:.85;transform:translate(0,0)}35%{opacity:0;transform:translate(1px,-1px)}100%{opacity:0}}
 `
@@ -487,8 +487,9 @@ export function drawPose(pose: Pose, shades: boolean): string {
       return at((Object.keys(WAVE_GRIDS) as YoohooFrame[])
         .map(f => `<g class="wv-${f}" transform="translate(-1 -3)">${gridArt(WAVE_GRIDS[f], true)}</g>`).join(''))
     case 'tap':
-      // Impatient: the clock on the wall ticks a quarter turn with every stomp
-      // of his foot, and each stomp kicks up a little dust.
+      // Impatient: the clock on the wall ticks a quarter turn every 0.6s while
+      // his foot stomps more slowly (0.95s), drifting in and out of step with
+      // it, and each stomp kicks up a little dust.
       return at(
         clawd({ eyes: 'flat', legs: px(1, 5, 1, 2) + px(3, 5, 1, 2) + px(7, 5, 1, 2) + g('foot', px(9, 5, 1, 2)) }) +
           `<g transform="translate(-5 -5)">${WALL_CLOCK}</g>` +
