@@ -74,6 +74,7 @@ export const g = (cls: string, inner: string) => `<g class="${cls}">${inner}</g>
 
 export type Eyes = 'open' | 'closed' | 'happy' | 'wide' | 'up' | 'down' | 'flat' | 'dot' | 'none'
 
+// Open eyes are a single pixel each; closed, squinting and narrowed eyes are lines.
 export function eyes(kind: Eyes, shades: boolean): string {
   if (shades && (kind === 'open' || kind === 'down' || kind === 'up'))
     return px(2, 1, 3, 2, INK) + px(6, 1, 3, 2, INK) + px(5, 1, 1, 1, INK) + px(2, 1, 1, 1, '#FFFFFF').replace('/>', ' opacity=".45"/>')
@@ -87,15 +88,15 @@ export function eyes(kind: Eyes, shades: boolean): string {
     case 'happy':
       return px(2, 2, 1, 1, INK) + px(3, 1, 1, 1, INK) + px(4, 2, 1, 1, INK) + px(6, 2, 1, 1, INK) + px(7, 1, 1, 1, INK) + px(8, 2, 1, 1, INK)
     case 'wide':
-      return g('blink', px(2, 1, 2, 2, INK) + px(7, 1, 2, 2, INK))
+      return g('blink', px(3, 1, 1, 1, INK) + px(7, 1, 1, 1, INK))
     case 'up':
       return g('blink', px(4, 1, 1, 1, INK) + px(8, 1, 1, 1, INK))
     case 'down':
-      return g('blink', px(3, 2, 1, 2, INK) + px(7, 2, 1, 2, INK))
+      return g('blink', px(3, 2, 1, 1, INK) + px(7, 2, 1, 1, INK))
     case 'flat':
       return px(2, 2, 2, 1, INK) + px(7, 2, 2, 1, INK) + px(2, 1, 2, 1, BODY)
     default:
-      return g('blink', px(3, 1, 1, 2, INK) + px(7, 1, 1, 2, INK))
+      return g('blink', px(3, 1, 1, 1, INK) + px(7, 1, 1, 1, INK))
   }
 }
 
