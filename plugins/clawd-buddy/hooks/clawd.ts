@@ -56,9 +56,9 @@ export const PUSH_RE = /\bgit\s+push\b/
 // ── Pixel art ──────────────────────────────────────────────────────────────
 export const U = 3.5 // px per pixel
 export const W = 36
-export const H = 13
+export const H = 14
 export const OX = 12
-export const OY = 5 // Clawd's top-left in the scene
+export const OY = 6 // Clawd's top-left in the scene (a row of headroom above him for the ta-da jump)
 export const BODY = '#D97757'
 export const INK = '#1F1E1D'
 export const GRAY = '#8E95AC'
@@ -537,8 +537,8 @@ export function drawPose(pose: Pose, shades: boolean): string {
       return at(
         `<g transform="translate(-5 -4)">` +
           (Object.keys(TADA_GRIDS) as TadaFrame[])
-            // the jump itself goes a pixel higher than drawn in the kit
-            .map(f => g(`td-${f}`, f === 'jump' ? `<g transform="translate(0 -1)">${gridArt(TADA_GRIDS[f], true)}</g>` : gridArt(TADA_GRIDS[f], true)))
+            // the jump itself goes two pixels higher than drawn in the kit
+            .map(f => g(`td-${f}`, f === 'jump' ? `<g transform="translate(0 -2)">${gridArt(TADA_GRIDS[f], true)}</g>` : gridArt(TADA_GRIDS[f], true)))
             .join('') +
           g('tdstars', TADA_SPARKLES) +
           `</g>`,
