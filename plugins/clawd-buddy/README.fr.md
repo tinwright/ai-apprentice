@@ -23,11 +23,11 @@ Clawd apparaît tout seul au-dessus de la zone de saisie dans l'application de b
 
 **Quand on a besoin de vous** : il vous fait signe quand Claude attend votre accord ou vous pose une question, et tape du pied si la question attend depuis une minute.
 
-**Sa journée** : café de 8 h à 10 h 30, sandwich de 12 h à 13 h, sommeil de 22 h à 7 h, somnolence après 20 minutes de calme, et lunettes de soleil le vendredi après-midi. Avec un café brûlant à la main, il ne saute pas.
+**Sa journée** : café de 8 h à 10 h 30, sandwich de 12 h à 13 h, sommeil de 22 h à 7 h, somnolence après 20 minutes de calme, et lunettes de soleil le vendredi après-midi. Avec un café brûlant à la main, il ne fait pas coucou.
 
-**Messages** : il saute quand une autre session Claude envoie un message à celle-ci.
+**Messages** : un point bleu apparaît au-dessus de sa tête et il agite les bras (coucou !) quand une autre session Claude envoie un message à celle-ci.
 
-Commandes : `/clawd-demo` (toutes les humeurs), `/clawd-jump` (un saut), `/clawd-coffee` (une pause café de 30 secondes).
+Commandes : `/clawd-demo` (toutes les humeurs), `/clawd-yoohoo` (un coucou), `/clawd-coffee` (une pause café de 30 secondes).
 
 ## Retours
 

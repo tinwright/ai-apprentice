@@ -7,7 +7,7 @@ declare module 'claude-code' {
   interface PluginState {
     'clawd-buddy': {
       phase: Phase
-      isJumping: boolean
+      isYoohoo: boolean
       isSipping: boolean
       activity: Activity
       helpers: number

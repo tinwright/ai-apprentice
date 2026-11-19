@@ -72,13 +72,13 @@ test('the drawing is an svg with a mini Clawd per helper', () => {
   expect(scene('sleep', false, 2).includes('class="mini')).toBe(false)
 })
 
-test('/clawd-jump makes him jump in the band above the prompt', async ($, on) => {
-  on('command.register', () => ({ value: { command: 'clawd-jump' } }))
+test('/clawd-yoohoo makes him wave in the band above the prompt', async ($, on) => {
+  on('command.register', () => ({ value: { command: 'clawd-yoohoo' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
-  const { text } = await $.command.run({ command: 'clawd-jump' })
-  expect(text).toBe('Clawd is jumping!')
+  const { text } = await $.command.run({ command: 'clawd-yoohoo' })
+  expect(text).toBe('Yoohoo! 👋')
 
   const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
   expect((await ui.find({ type: 'Text', text: /pinged/ }))?.text).toBe('a session pinged you!')
@@ -86,7 +86,7 @@ test('/clawd-jump makes him jump in the band above the prompt', async ($, on) =>
 })
 
 test('passing tests earn a ta-da, on every surface', async ($, on) => {
-  on('command.register', () => ({ value: { command: 'clawd-jump' } }))
+  on('command.register', () => ({ value: { command: 'clawd-yoohoo' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('tool.call', () => ({ result: {} }))
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })

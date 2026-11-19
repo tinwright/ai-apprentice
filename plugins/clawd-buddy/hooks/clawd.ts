@@ -10,7 +10,7 @@ export const WAKE_UP = 7 * 60 // 7:00am
 export const FRIDAY_FROM = 12 * 60 // Friday afternoon sunglasses
 
 // ── Timings ────────────────────────────────────────────────────────────────
-export const JUMP_MS = 4000
+export const YOOHOO_MS = 4000
 export const COFFEE_BREAK_MS = 30_000
 export const DOZE_AFTER_MS = 20 * 60_000 // nod off after 20 idle minutes
 export const IMPATIENT_AFTER_MS = 60_000 // tap his foot after a question waits 1 min
@@ -114,19 +114,19 @@ export const steam = () =>
   `<rect class="steam" x="0.5" y="-2" width="1" height="1"/><rect class="steam s2" x="1.5" y="-2" width="1" height="1"/><rect class="steam s3" x="1" y="-3" width="1" height="1"/>`
 export const sandwich = () => px(0, 0, 3, 1, '#E3B36B') + px(0, 1, 3, 1, '#6DBE45') + px(0, 2, 3, 1, '#C0504D') + px(0, 3, 3, 1, '#E3B36B')
 
-// ── Jump ───────────────────────────────────────────────────────────────────
+// ── Yoohoo ─────────────────────────────────────────────────────────────────
 // From the pixel kit: a session pinged you, so a blue dot ('n') pops up over
 // his head and he flaps his arms from straight up to out wide and back.
 // A grid's top-left is at (-1, -3) in Clawd's own coordinates (column 7, row 2
 // on a kit canvas).
-const JUMP_GRIDS = {
+const YOOHOO_GRIDS = {
   up: ['......n......', '..oo.....oo..', '..oo.....oo..', '..ooooooooo..', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
   wide: ['......n......', '.oo.......oo.', '.oo.......oo.', '.ooooooooooo.', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
   angle: ['......n......', 'oo.........oo', 'ooo.......ooo', '.ooooooooooo.', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
   out: ['......n......', '.............', 'ooo.......ooo', 'ooooooooooooo', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
 } as const
-type JumpFrame = keyof typeof JUMP_GRIDS
-const JUMP_STEPS: [JumpFrame, number][] = [
+type YoohooFrame = keyof typeof YOOHOO_GRIDS
+const YOOHOO_STEPS: [YoohooFrame, number][] = [
   ['up', 0.18], ['wide', 0.18], ['angle', 0.18], ['out', 0.18], ['angle', 0.18], ['wide', 0.18],
 ]
 
@@ -297,7 +297,7 @@ const SWEEP_STEPS: [SweepFrame, number][] = [
 ]
 const SWEEP_CSS = framesCss('sw', SWEEP_STEPS)
 const SEARCH_CSS = framesCss('se', SEARCH_STEPS)
-const JUMP_CSS = framesCss('jp', JUMP_STEPS)
+const YOOHOO_CSS = framesCss('yh', YOOHOO_STEPS)
 
 export const STYLE = `
   svg{overflow:visible}
@@ -329,7 +329,7 @@ export const STYLE = `
   ${STRETCH_CSS}
   ${SWEEP_CSS}
   ${SEARCH_CSS}
-  ${JUMP_CSS}
+  ${YOOHOO_CSS}
   .dust{opacity:0;animation:dust .9s linear infinite}
   @keyframes dust{0%{opacity:.7;transform:translate(0,0)}100%{opacity:0;transform:translate(2px,-2px)}}
   .waveA{animation:waveA .9s steps(1) infinite}.waveB{animation:waveB .9s steps(1) infinite}
@@ -344,16 +344,16 @@ export const STYLE = `
 `
 
 export type Pose =
-  | 'idle' | 'jump' | 'sleep' | 'coffee' | 'lunch' | 'typing' | 'writing' | 'searching'
+  | 'idle' | 'yoohoo' | 'sleep' | 'coffee' | 'lunch' | 'typing' | 'writing' | 'searching'
   | 'thinking' | 'oops' | 'proud' | 'stretch' | 'thumbs' | 'sweep' | 'wave' | 'tap'
 
 export function drawPose(pose: Pose, shades: boolean): string {
   const at = (inner: string) => `<g transform="translate(${OX} ${OY})">${inner}</g>`
   switch (pose) {
-    case 'jump':
+    case 'yoohoo':
       // Frames from the pixel kit: arms flapping under a blue notification dot.
-      return at((Object.keys(JUMP_GRIDS) as JumpFrame[])
-        .map(f => `<g class="jp-${f}" transform="translate(-1 -3)">${gridArt(JUMP_GRIDS[f], true)}</g>`).join(''))
+      return at((Object.keys(YOOHOO_GRIDS) as YoohooFrame[])
+        .map(f => `<g class="yh-${f}" transform="translate(-1 -3)">${gridArt(YOOHOO_GRIDS[f], true)}</g>`).join(''))
     case 'sleep':
       return (
         at(g('breathe', clawd({ eyes: 'closed' }))) +
@@ -451,7 +451,7 @@ export function scene(pose: Pose, shades: boolean, helperCount: number): string 
 
 export const CAPTION: Record<Pose, string> = {
   idle: '',
-  jump: 'a session pinged you!',
+  yoohoo: 'a session pinged you!',
   sleep: 'zzz… sleeping',
   coffee: 'morning coffee ☕',
   lunch: 'lunch break 🥪',
@@ -469,7 +469,7 @@ export const CAPTION: Record<Pose, string> = {
 }
 
 export const ALT: Record<Pose, string> = {
-  idle: 'Clawd hanging out', jump: 'Clawd jumping', sleep: 'Clawd asleep', coffee: 'Clawd sipping coffee',
+  idle: 'Clawd hanging out', yoohoo: 'Clawd waving yoohoo under a notification dot', sleep: 'Clawd asleep', coffee: 'Clawd sipping coffee',
   lunch: 'Clawd eating a sandwich', typing: 'Clawd typing', writing: 'Clawd writing', searching: 'Clawd searching with a magnifying glass',
   thinking: 'Clawd thinking', oops: 'Clawd startled', proud: 'Clawd celebrating', stretch: 'Clawd stretching',
   thumbs: 'Clawd giving a thumbs-up', sweep: 'Clawd sweeping', wave: 'Clawd waving for your attention', tap: 'Clawd tapping his foot',
@@ -495,7 +495,7 @@ export const DEMO: { pose: Pose; caption: string; shades?: boolean; helpers?: nu
   { pose: 'sleep', caption: 'dozing…' },
   { pose: 'coffee', caption: CAPTION.coffee },
   { pose: 'lunch', caption: CAPTION.lunch },
-  { pose: 'jump', caption: CAPTION.jump },
+  { pose: 'yoohoo', caption: CAPTION.yoohoo },
 ]
 export function choosePose(s: {
   phase: Phase; sipping: boolean; activity: Activity; moment: Moment; waiting: Waiting; dozing: boolean; working: boolean
