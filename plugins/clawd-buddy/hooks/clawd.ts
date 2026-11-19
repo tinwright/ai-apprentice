@@ -355,6 +355,9 @@ export const STYLE = `
   @keyframes key3{0%,59.6%{opacity:0}59.7%,100%{opacity:1}}
   .foot{animation:foot .6s steps(1) infinite}
   @keyframes foot{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-1px)}}
+  .stompL,.stompR{opacity:0;animation:.6s linear infinite}.stompL{animation-name:stompL}.stompR{animation-name:stompR}
+  @keyframes stompL{0%{opacity:.85;transform:translate(0,0)}35%{opacity:0;transform:translate(-1px,-1px)}100%{opacity:0}}
+  @keyframes stompR{0%{opacity:.85;transform:translate(0,0)}35%{opacity:0;transform:translate(1px,-1px)}100%{opacity:0}}
 `
 
 export type Pose =
@@ -424,7 +427,12 @@ export function drawPose(pose: Pose, shades: boolean): string {
       return at((Object.keys(WAVE_GRIDS) as YoohooFrame[])
         .map(f => `<g class="wv-${f}" transform="translate(-1 -3)">${gridArt(WAVE_GRIDS[f], true)}</g>`).join(''))
     case 'tap':
-      return at(clawd({ eyes: 'flat', legs: px(1, 5, 1, 2) + px(3, 5, 1, 2) + px(7, 5, 1, 2) + g('foot', px(9, 5, 1, 2)) }))
+      // Impatient: a '!' over his head, and a little dust each time his foot stomps down.
+      return at(
+        clawd({ eyes: 'flat', legs: px(1, 5, 1, 2) + px(3, 5, 1, 2) + px(7, 5, 1, 2) + g('foot', px(9, 5, 1, 2)) }) +
+          px(5, -5, 1, 2, RED) + px(5, -2, 1, 1, RED) +
+          px(8.25, 6.5, 0.5, 0.5, GRAY, 'stompL') + px(10.25, 6.5, 0.5, 0.5, GRAY, 'stompR'),
+      )
     default:
       return at(g('bob', clawd({ shades })))
   }
