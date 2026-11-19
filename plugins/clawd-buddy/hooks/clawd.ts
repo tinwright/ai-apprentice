@@ -296,6 +296,16 @@ function stretchCss(): string {
 }
 const STRETCH_CSS = stretchCss()
 
+// Oops legs on the pixel grid: the top of each leg stays put under his body
+// (reaching half a pixel up so no seam shows) and its foot sits straight
+// under it, or one pixel to the side, joined at the corner.
+const legsWithFeetAt = (dx: number) =>
+  [1, 3, 7, 9].map(x => px(x, 4.5, 1, 1.5) + px(x + dx, 6, 1, 1)).join('')
+const OOPS_LEG_STEPS: [string, number][] = [['left', 0.125], ['mid', 0.125], ['right', 0.125], ['mid', 0.125]]
+const OOPS_LEGS =
+  g('ol-mid', legsWithFeetAt(0)) + g('ol-left', legsWithFeetAt(-1)) + g('ol-right', legsWithFeetAt(1))
+const OOPS_LEG_CSS = framesCss('ol', OOPS_LEG_STEPS)
+
 // A thick pixel wall clock (drawn in the kit style): a grey face with a dark
 // hour hand pointing right and a minute hand that jumps a quarter turn with
 // every stomp, round from twelve to three, six and nine.
@@ -354,6 +364,7 @@ export const STYLE = `
   .sway{animation:sway 1.2s steps(1) infinite}
   @keyframes sway{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(1px)}}
   ${STRETCH_CSS}
+  ${OOPS_LEG_CSS}
   ${SWEEP_CSS}
   ${SEARCH_CSS}
   ${YOOHOO_CSS}
@@ -422,8 +433,10 @@ export function drawPose(pose: Pose, shades: boolean): string {
           px(13, -5, 7, 3, BUBBLE) + px(14, -4, 1, 1, BODY, 'd1') + px(16, -4, 1, 1, BODY, 'd2') + px(18, -4, 1, 1, BODY, 'd3'),
       )
     case 'oops':
-      // Startled: a red '!' and his arms wiggling in turn, like the helpers'.
-      return at(g('startle', clawd({ eyes: 'wide', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R) }) + px(5, -5, 1, 2, RED) + px(5, -2, 1, 1, RED)))
+      // Startled: a red '!', his arms wiggling in turn like the helpers', and his
+      // legs scrambling: each leg's foot steps a pixel diagonally left, back
+      // under him, then a pixel diagonally right.
+      return at(g('startle', clawd({ eyes: 'wide', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R), legs: OOPS_LEGS }) + px(5, -5, 1, 2, RED) + px(5, -2, 1, 1, RED)))
     case 'proud':
       return at(g('sway', clawd({ eyes: 'happy', armL: px(-1, 1, 2, 1) + px(-2, 0, 1, 1), armR: px(10, 1, 2, 1) + px(12, 0, 1, 1) })))
     case 'stretch':
