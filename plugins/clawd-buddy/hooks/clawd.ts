@@ -164,26 +164,33 @@ const TADA_GRIDS = {
 } as const
 type TadaFrame = keyof typeof TADA_GRIDS
 const TADA_STEPS: [TadaFrame, number][] = [
-  ['rest', 0.4], ['squash', 0.12], ['rest', 0.1], ['wide', 0.1], ['angle', 0.1], ['up', 0.1],
+  ['rest', 0.3], ['squash', 0.12], ['rest', 0.1], ['wide', 0.1], ['angle', 0.1], ['up', 0.1],
   ['crouch', 0.12], ['jump', 0.12], ['land', 0.12], ['angle', 0.1], ['wide', 0.1],
+  ['rest', 1.4], // back on the ground, while the last of the star dust fades
 ]
 // Star dust cells, in the same grid coordinates.
 const TADA_STARS: [number, number][] = [[1, 1], [18, 1], [0, 2], [1, 2], [2, 2], [1, 3], [19, 4], [2, 5], [18, 5], [19, 5], [20, 5], [19, 6]]
-// The dust is brightest the moment he jumps and fades a step each frame after.
+// The dust bursts out the moment he jumps, stays bright while he lands, then
+// fades slowly and smoothly away while he stands back on the ground.
 function tadaStarsCss(): string {
   const total = TADA_STEPS.reduce((t, [, d]) => t + d, 0)
   const pct = (t: number) => `${+((t / total) * 100).toFixed(3)}%`
   let t = 0
-  const marks = ['0%{opacity:0}']
-  const fade = [1, 0.6, 0.3, 0.1]
-  let i = -1
+  let jumpAt = 0
+  let landEnd = 0
   for (const [frame, d] of TADA_STEPS) {
-    if (frame === 'jump') i = 0
-    if (i >= 0 && i < fade.length) marks.push(`${pct(t)}{opacity:${fade[i]}}`), i++
-    else if (i === fade.length) marks.push(`${pct(t)}{opacity:0}`), i++
+    if (frame === 'jump') jumpAt = t
+    if (frame === 'land') landEnd = t + d
     t += d
   }
-  return `.tdstars{opacity:0;animation:tdstars ${total}s steps(1) infinite}@keyframes tdstars{${marks.join('')}}`
+  const marks = [
+    '0%{opacity:0}',
+    `${pct(jumpAt - 0.001)}{opacity:0}`,
+    `${pct(jumpAt)}{opacity:1}`,
+    `${pct(landEnd)}{opacity:1}`,
+    '100%{opacity:0}',
+  ]
+  return `.tdstars{opacity:0;animation:tdstars ${total}s linear infinite}@keyframes tdstars{${marks.join('')}}`
 }
 
 // ── Writing ────────────────────────────────────────────────────────────────
