@@ -159,8 +159,8 @@ const WRITE_GRIDS = {
   in4: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.ooo#oooo#opppp', '.oooooooooopggp', '.ooodddyyk.pppp', '.o.o...o.o.....', '.o.o...o.o.....'],
   sc1: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooo#ooo#opppp', '.oooooooooopggp', '.ooooodddoyykpp', '.o.o...o.o.....', '.o.o...o.o.....'],
   sc2: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooo#ooo#opppp', '.oooooooddyykgp', '.oooooodoo.pppp', '.o.o...o.o.....', '.o.o...o.o.....'],
-  sc3: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooo#ooooopppp', '.ooooooooodyykp', '.ooooooddd.pppp', '.o.o...o.o.....', '.o.o...o.o.....'],
-  sc4: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooo#ooo#opppp', '.oooooooooopggp', '.ooooooddddyykp', '.o.o...o.o.....', '.o.o...o.o.....'],
+  sc3: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooo#oooodpppp', '.ooooooooodpykp', '.ooooooddd.pppp', '.o.o...o.o.....', '.o.o...o.o.....'],
+  sc4: ['.ooooooooo.pppp', '.ooooooooo.pggp', '.oooo#ooooopppp', '.oooooooooopggp', '.ooooooddddyykp', '.o.o...o.o.....', '.o.o...o.o.....'],
 } as const
 type WriteFrame = keyof typeof WRITE_GRIDS
 const SCRIBBLE: [WriteFrame, number][] = [['sc1', 0.12], ['sc2', 0.12], ['sc3', 0.12], ['sc4', 0.12]]
