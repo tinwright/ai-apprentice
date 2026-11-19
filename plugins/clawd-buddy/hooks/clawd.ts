@@ -114,6 +114,24 @@ export const steam = () =>
   `<rect class="steam" x="0.5" y="-2" width="1" height="1"/><rect class="steam s2" x="1.5" y="-2" width="1" height="1"/><rect class="steam s3" x="1" y="-3" width="1" height="1"/>`
 export const sandwich = () => px(0, 0, 3, 1, '#E3B36B') + px(0, 1, 3, 1, '#6DBE45') + px(0, 2, 3, 1, '#C0504D') + px(0, 3, 3, 1, '#E3B36B')
 
+// ── Jump ───────────────────────────────────────────────────────────────────
+// From the pixel kit: a session pinged you, so a blue dot ('n') pops up over
+// his head and he flaps his arms from straight up to out flat and back.
+// A grid's top-left is at (-1, -3) in Clawd's own coordinates (column 7, row 2
+// on a kit canvas).
+const JUMP_GRIDS = {
+  up: ['......n......', '..oo.....oo..', '..oo.....oo..', '..ooooooooo..', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
+  wide: ['......n......', '.oo.......oo.', '.oo.......oo.', '.ooooooooooo.', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
+  angle: ['......n......', 'oo.........oo', 'ooo.......ooo', '.ooooooooooo.', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
+  out: ['......n......', '.............', 'ooo.......ooo', 'ooooooooooooo', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
+  flat: ['......n......', '.............', '.............', 'ooooooooooooo', 'oooo#ooo#oooo', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
+} as const
+type JumpFrame = keyof typeof JUMP_GRIDS
+const JUMP_STEPS: [JumpFrame, number][] = [
+  ['up', 0.12], ['wide', 0.1], ['angle', 0.1], ['out', 0.1], ['flat', 0.2],
+  ['out', 0.1], ['angle', 0.1], ['wide', 0.1],
+]
+
 // ── Search ─────────────────────────────────────────────────────────────────
 // From the pixel kit: the magnifying glass slides in over his eye a pixel at a
 // time ('l' is lens, his eye showing big through it), he blinks twice,
@@ -168,8 +186,9 @@ const STRETCH_STEPS: [StretchFrame, number, number][] = [
   ['up4', 1.2, 1], ['up3', 0.1, 0], ['up2', 0.1, 0], ['up1', 1.5, 0],
 ]
 
-// Kit grids: 'o' body, '#' eye, 'c' closed eye, 'w' handle, 'b' bristles, 'l' lens, '.' empty.
-const GRID_COLOURS: Record<string, string> = { o: BODY, '#': BODY, w: BROWN, b: '#E3B36B', l: '#BFE3F2' }
+// Kit grids: 'o' body, '#' eye, 'c' closed eye, 'w' handle, 'b' bristles, 'l' lens,
+// 'n' notification dot, '.' empty.
+const GRID_COLOURS: Record<string, string> = { o: BODY, '#': BODY, w: BROWN, b: '#E3B36B', l: '#BFE3F2', n: '#3A4DDF' }
 const material = (c: string | undefined) => (c === '#' || c === 'c' ? 'o' : c ?? '.')
 
 // One run per row for each colour; where the row below is the same colour,
@@ -280,6 +299,7 @@ const SWEEP_STEPS: [SweepFrame, number][] = [
 ]
 const SWEEP_CSS = framesCss('sw', SWEEP_STEPS)
 const SEARCH_CSS = framesCss('se', SEARCH_STEPS)
+const JUMP_CSS = framesCss('jp', JUMP_STEPS)
 
 export const STYLE = `
   svg{overflow:visible}
@@ -298,8 +318,6 @@ export const STYLE = `
   .steam{fill:#B9B4AC;opacity:0;animation:steam 2.4s linear infinite}
   .s2{animation-delay:.8s}.s3{animation-delay:1.6s}
   @keyframes steam{0%{opacity:0;transform:translateY(0)}30%{opacity:.8}100%{opacity:0;transform:translateY(-4px)}}
-  .jump{transform-origin:50% 100%;transform-box:fill-box;animation:jump 1s steps(1) infinite}
-  @keyframes jump{0%,24%{transform:translateY(0) scaleY(.85)}25%,49%{transform:translateY(-3px)}50%,74%{transform:translateY(-4px)}75%,100%{transform:translateY(-2px)}}
   .tapL{animation:tap .5s steps(1) infinite}.tapR{animation:tap .5s steps(1) .25s infinite}
   @keyframes tap{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(1px)}}
   .scribble{animation:scribble .6s steps(1) infinite}
@@ -313,6 +331,7 @@ export const STYLE = `
   ${STRETCH_CSS}
   ${SWEEP_CSS}
   ${SEARCH_CSS}
+  ${JUMP_CSS}
   .dust{opacity:0;animation:dust .9s linear infinite}
   @keyframes dust{0%{opacity:.7;transform:translate(0,0)}100%{opacity:0;transform:translate(2px,-2px)}}
   .waveA{animation:waveA .9s steps(1) infinite}.waveB{animation:waveB .9s steps(1) infinite}
@@ -334,7 +353,9 @@ export function drawPose(pose: Pose, shades: boolean): string {
   const at = (inner: string) => `<g transform="translate(${OX} ${OY})">${inner}</g>`
   switch (pose) {
     case 'jump':
-      return at(g('jump', clawd({ eyes: 'happy' })))
+      // Frames from the pixel kit: arms flapping under a blue notification dot.
+      return at((Object.keys(JUMP_GRIDS) as JumpFrame[])
+        .map(f => `<g class="jp-${f}" transform="translate(-1 -3)">${gridArt(JUMP_GRIDS[f], true)}</g>`).join(''))
     case 'sleep':
       return (
         at(g('breathe', clawd({ eyes: 'closed' }))) +
