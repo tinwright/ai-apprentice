@@ -295,9 +295,15 @@ function stretchCss(): string {
 }
 const STRETCH_CSS = stretchCss()
 
-// The anger vein: four corner brackets round a cross-shaped gap.
-const ANGER_VEIN = ['.o.o.', 'oo.oo', '.....', 'oo.oo', '.o.o.']
-  .map((row, y) => [...row].map((c, x) => (c === 'o' ? px(x, y, 1, 1, RED) : '')).join('')).join('')
+// A wall clock: a round wooden frame ('w') round a cream face ('f'), its
+// hour hand at three and its minute hand ticking round.
+const WALL_CLOCK =
+  ['..www..', '.wfffw.', 'wfffffw', 'wfffffw', 'wfffffw', '.wfffw.', '..www..']
+    .map((row, y) => [...row].map((c, x) => (c === '.' ? '' : px(x, y, 1, 1, c === 'w' ? BROWN : CREAM))).join(''))
+    .join('') +
+  px(3.5, 3.35, 1.4, 0.3, INK) + // hour hand, pointing at three
+  g('tick', px(3.35, 1.2, 0.3, 2.3, INK)) + // minute hand, from the top to the middle
+  px(3.25, 3.25, 0.5, 0.5, INK)
 
 // ── Sweep ──────────────────────────────────────────────────────────────────
 // The broom stroke, six frames from the pixel kit. A grid's top-left is at
@@ -359,8 +365,8 @@ export const STYLE = `
   @keyframes key3{0%,59.6%{opacity:0}59.7%,100%{opacity:1}}
   .foot{animation:foot .6s steps(1) infinite}
   @keyframes foot{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-1px)}}
-  .vein{transform-origin:50% 50%;transform-box:fill-box;shape-rendering:geometricPrecision;animation:vein 1.8s ease-in-out infinite}
-  @keyframes vein{0%,100%{transform:scale(1)}25%{transform:scale(.8)}}
+  .tick{transform-origin:50% 100%;transform-box:fill-box;shape-rendering:geometricPrecision;animation:tick 7.2s steps(12) infinite}
+  @keyframes tick{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
   .stompL,.stompR{opacity:0;animation:.6s linear infinite}.stompL{animation-name:stompL}.stompR{animation-name:stompR}
   @keyframes stompL{0%{opacity:.85;transform:translate(0,0)}35%{opacity:0;transform:translate(-1px,-1px)}100%{opacity:0}}
   @keyframes stompR{0%{opacity:.85;transform:translate(0,0)}35%{opacity:0;transform:translate(1px,-1px)}100%{opacity:0}}
@@ -433,12 +439,11 @@ export function drawPose(pose: Pose, shades: boolean): string {
       return at((Object.keys(WAVE_GRIDS) as YoohooFrame[])
         .map(f => `<g class="wv-${f}" transform="translate(-1 -3)">${gridArt(WAVE_GRIDS[f], true)}</g>`).join(''))
     case 'tap':
-      // Impatient: an anger vein (from the pixel kit) tucked against the corner of
-      // his head pulses smaller and back once every three stomps, kicking
-      // up a little dust.
+      // Impatient: a clock on the wall ticks round with every stomp of his foot,
+      // and each stomp kicks up a little dust.
       return at(
         clawd({ eyes: 'flat', legs: px(1, 5, 1, 2) + px(3, 5, 1, 2) + px(7, 5, 1, 2) + g('foot', px(9, 5, 1, 2)) }) +
-          g('vein', `<g transform="translate(-4 -4) rotate(45 2.5 2.5)">${ANGER_VEIN}</g>`) +
+          `<g transform="translate(-9 -4)">${WALL_CLOCK}</g>` +
           px(8.25, 6.5, 0.5, 0.5, GRAY, 'stompL') + px(10.25, 6.5, 0.5, 0.5, GRAY, 'stompR'),
       )
     default:
