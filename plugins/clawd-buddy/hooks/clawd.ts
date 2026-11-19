@@ -146,6 +146,46 @@ const WAVE_GRIDS = Object.fromEntries(
   ]),
 ) as Record<YoohooFrame, string[]>
 
+// ── Ta-da ──────────────────────────────────────────────────────────────────
+// From the pixel kit: he squashes down, throws his arms up, crouches and
+// jumps, with star dust ('y' in the kit) bursting out as he leaves the ground
+// and fading away over the next few frames. Squinting eyes are 'u'.
+// A grid's top-left is at (-5, -4) in Clawd's own coordinates (column 3, row 1
+// on a kit canvas).
+const TADA_GRIDS = {
+  rest: ['.....................', '.....................', '.....................', '.....................', '......ooooooooo......', '....oooo#ooo#oooo....', '....ooooooooooooo....', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......'],
+  squash: ['.....................', '.....................', '.....................', '.....................', '.....................', '......ooooooooo......', '.....ooouooouooo.....', '....ooooooooooooo....', '....ooooooooooooo....', '......ooooooooo......', '......o.o...o.o......'],
+  wide: ['.....................', '.....................', '.....................', '....ooo.......ooo....', '....ooooooooooooo....', '......oo#ooo#oo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......'],
+  angle: ['.....................', '.....................', '....oo.........oo....', '....ooo.......ooo....', '.....ooooooooooo.....', '......oo#ooo#oo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......'],
+  up: ['.....................', '.....................', '.....oo.......oo.....', '.....oo.......oo.....', '.....ooooooooooo.....', '......oo#ooo#oo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......'],
+  crouch: ['.....................', '......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oouooouoo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '.......o.o.o.o.......', '.....................'],
+  jump: ['......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oouooouoo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......', '.....................', '.....................'],
+  land: ['.....................', '......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oo#ooo#oo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......', '.....................'],
+} as const
+type TadaFrame = keyof typeof TADA_GRIDS
+const TADA_STEPS: [TadaFrame, number][] = [
+  ['rest', 0.4], ['squash', 0.12], ['rest', 0.1], ['wide', 0.1], ['angle', 0.1], ['up', 0.1],
+  ['crouch', 0.12], ['jump', 0.25], ['land', 0.12], ['angle', 0.1], ['wide', 0.1],
+]
+// Star dust cells, in the same grid coordinates.
+const TADA_STARS: [number, number][] = [[1, 1], [18, 1], [0, 2], [1, 2], [2, 2], [1, 3], [19, 4], [2, 5], [18, 5], [19, 5], [20, 5], [19, 6]]
+// The dust is brightest the moment he jumps and fades a step each frame after.
+function tadaStarsCss(): string {
+  const total = TADA_STEPS.reduce((t, [, d]) => t + d, 0)
+  const pct = (t: number) => `${+((t / total) * 100).toFixed(3)}%`
+  let t = 0
+  const marks = ['0%{opacity:0}']
+  const fade = [1, 0.6, 0.3, 0.1]
+  let i = -1
+  for (const [frame, d] of TADA_STEPS) {
+    if (frame === 'jump') i = 0
+    if (i >= 0 && i < fade.length) marks.push(`${pct(t)}{opacity:${fade[i]}}`), i++
+    else if (i === fade.length) marks.push(`${pct(t)}{opacity:0}`), i++
+    t += d
+  }
+  return `.tdstars{opacity:0;animation:tdstars ${total}s steps(1) infinite}@keyframes tdstars{${marks.join('')}}`
+}
+
 // ── Writing ────────────────────────────────────────────────────────────────
 // From the pixel kit: he rests a moment with the pencil ('y', its tip 'k')
 // held upright at his side, brings it across to the paper ('p', lines 'g')
@@ -227,12 +267,12 @@ const STRETCH_STEPS: [StretchFrame, number, number][] = [
 
 // Kit grids: 'o' body, '#' eye, 'c' closed eye, 'w' handle, 'b' bristles, 'l' lens,
 // 'n' notification dot, 'd' arm in shadow, 'y' pencil, 'k' pencil tip, 'p' paper,
-// 'g' lines on the paper, '.' empty.
+// 'g' lines on the paper, 'u' squinting eye, '.' empty.
 const GRID_COLOURS: Record<string, string> = {
   o: BODY, '#': BODY, w: BROWN, b: '#E3B36B', l: '#BFE3F2', n: '#3A4DDF',
   d: '#B96144', y: GOLD, k: INK, p: '#F4EFE6', g: '#B9B4AC',
 }
-const material = (c: string | undefined) => (c === '#' || c === 'c' ? 'o' : c ?? '.')
+const material = (c: string | undefined) => (c === '#' || c === 'c' || c === 'u' ? 'o' : c ?? '.')
 
 // One run per row for each colour; where the row below is the same colour,
 // the run reaches half a pixel down into it so no seam shows between rows.
@@ -262,6 +302,7 @@ export function gridArt(rows: readonly string[], blink = false): string {
   rows.forEach((row, y) => [...row].forEach((c, x) => {
     if (c === '#') eyes += px(x, y, 1, 1, INK)
     if (c === 'c') out += px(x, y + 0.7, 1, 0.3, INK) // a shut eye: a thin line at its bottom
+    if (c === 'u') out += px(x, y, 1, 0.25, INK) // a squint: a thin line at its top
   }))
   return out + (blink && eyes ? g('blink', eyes) : eyes)
 }
@@ -367,6 +408,7 @@ const SWEEP_STEPS: [SweepFrame, number][] = [
 const SWEEP_CSS = framesCss('sw', SWEEP_STEPS)
 const SEARCH_CSS = framesCss('se', SEARCH_STEPS)
 const WRITE_CSS = framesCss('wr', WRITE_STEPS)
+const TADA_CSS = framesCss('td', TADA_STEPS) + tadaStarsCss()
 const YOOHOO_CSS = framesCss('yh', YOOHOO_STEPS)
 const WAVE_CSS = framesCss('wv', YOOHOO_STEPS)
 
@@ -395,13 +437,12 @@ export const STYLE = `
   @keyframes dot{0%,19%{opacity:0}20%,85%{opacity:1}86%,100%{opacity:0}}
   .startle{animation:startle .5s steps(1) 2}
   @keyframes startle{0%,49%{transform:translateY(-1px)}50%,100%{transform:translateY(0)}}
-  .sway{animation:sway 1.2s steps(1) infinite}
-  @keyframes sway{0%,49%{transform:translateX(0)}50%,100%{transform:translateX(1px)}}
   ${STRETCH_CSS}
   ${OOPS_LEG_CSS}
   ${SWEEP_CSS}
   ${SEARCH_CSS}
   ${WRITE_CSS}
+  ${TADA_CSS}
   ${YOOHOO_CSS}
   ${WAVE_CSS}
   .dust{opacity:0;animation:dust .9s linear infinite}
@@ -471,7 +512,13 @@ export function drawPose(pose: Pose, shades: boolean): string {
       // under him, then a pixel diagonally right.
       return at(g('startle', clawd({ eyes: 'wide', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R), legs: OOPS_LEGS }) + px(5, -5, 1, 2, RED) + px(5, -2, 1, 1, RED)))
     case 'proud':
-      return at(g('sway', clawd({ eyes: 'happy', armL: px(-1, 1, 2, 1) + px(-2, 0, 1, 1), armR: px(10, 1, 2, 1) + px(12, 0, 1, 1) })))
+      // Frames from the pixel kit, with the star dust on its own layer.
+      return at(
+        `<g transform="translate(-5 -4)">` +
+          (Object.keys(TADA_GRIDS) as TadaFrame[]).map(f => g(`td-${f}`, gridArt(TADA_GRIDS[f], true))).join('') +
+          g('tdstars', TADA_STARS.map(([x, y]) => px(x, y, 1, 1, GOLD)).join('')) +
+          `</g>`,
+      )
     case 'stretch':
       return at(g('stretch', g('tilt', (Object.keys(STRETCH_GRIDS) as StretchFrame[])
         .map(f => `<g class="sf-${f}" transform="translate(-2 -3)">${gridArt(STRETCH_GRIDS[f])}</g>`).join(''))))
