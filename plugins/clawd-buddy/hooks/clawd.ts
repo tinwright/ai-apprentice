@@ -422,7 +422,8 @@ export function drawPose(pose: Pose, shades: boolean): string {
           px(13, -5, 7, 3, BUBBLE) + px(14, -4, 1, 1, BODY, 'd1') + px(16, -4, 1, 1, BODY, 'd2') + px(18, -4, 1, 1, BODY, 'd3'),
       )
     case 'oops':
-      return at(g('startle', clawd({ eyes: 'wide' }) + px(5, -5, 1, 2, RED) + px(5, -2, 1, 1, RED)))
+      // Startled: a red '!' and his arms wiggling in turn, like the helpers'.
+      return at(g('startle', clawd({ eyes: 'wide', armL: g('tapL', ARM_L), armR: g('tapR', ARM_R) }) + px(5, -5, 1, 2, RED) + px(5, -2, 1, 1, RED)))
     case 'proud':
       return at(g('sway', clawd({ eyes: 'happy', armL: px(-1, 1, 2, 1) + px(-2, 0, 1, 1), armR: px(10, 1, 2, 1) + px(12, 0, 1, 1) })))
     case 'stretch':
