@@ -127,7 +127,7 @@ const JUMP_GRIDS = {
 } as const
 type JumpFrame = keyof typeof JUMP_GRIDS
 const JUMP_STEPS: [JumpFrame, number][] = [
-  ['up', 0.1], ['wide', 0.1], ['angle', 0.1], ['out', 0.1], ['angle', 0.1], ['wide', 0.1],
+  ['up', 0.18], ['wide', 0.18], ['angle', 0.18], ['out', 0.18], ['angle', 0.18], ['wide', 0.18],
 ]
 
 // ── Search ─────────────────────────────────────────────────────────────────
