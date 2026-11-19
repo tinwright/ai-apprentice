@@ -116,7 +116,7 @@ export const sandwich = () => px(0, 0, 3, 1, '#E3B36B') + px(0, 1, 3, 1, '#6DBE4
 
 // ── Jump ───────────────────────────────────────────────────────────────────
 // From the pixel kit: a session pinged you, so a blue dot ('n') pops up over
-// his head and he flaps his arms from straight up to out flat and back.
+// his head and he flaps his arms from straight up to out wide and back.
 // A grid's top-left is at (-1, -3) in Clawd's own coordinates (column 7, row 2
 // on a kit canvas).
 const JUMP_GRIDS = {
@@ -124,12 +124,10 @@ const JUMP_GRIDS = {
   wide: ['......n......', '.oo.......oo.', '.oo.......oo.', '.ooooooooooo.', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
   angle: ['......n......', 'oo.........oo', 'ooo.......ooo', '.ooooooooooo.', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
   out: ['......n......', '.............', 'ooo.......ooo', 'ooooooooooooo', '..oo#ooo#oo..', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
-  flat: ['......n......', '.............', '.............', 'ooooooooooooo', 'oooo#ooo#oooo', '..ooooooooo..', '..ooooooooo..', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..'],
 } as const
 type JumpFrame = keyof typeof JUMP_GRIDS
 const JUMP_STEPS: [JumpFrame, number][] = [
-  ['up', 0.12], ['wide', 0.1], ['angle', 0.1], ['out', 0.1], ['flat', 0.2],
-  ['out', 0.1], ['angle', 0.1], ['wide', 0.1],
+  ['up', 0.12], ['wide', 0.1], ['angle', 0.1], ['out', 0.2], ['angle', 0.1], ['wide', 0.1],
 ]
 
 // ── Search ─────────────────────────────────────────────────────────────────
