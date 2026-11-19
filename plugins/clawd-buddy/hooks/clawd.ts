@@ -147,28 +147,28 @@ const WAVE_GRIDS = Object.fromEntries(
 ) as Record<YoohooFrame, string[]>
 
 // ── Writing ────────────────────────────────────────────────────────────────
-// From the pixel kit: he holds the pencil ('y', its tip 'k') upright at his
-// left side, brings it across to the paper ('p', lines 'g') with his arm in
-// shadow ('d'), scribbles three times round, then takes it back the way it
-// came. A grid's top-left is at (-1, 0) in Clawd's own coordinates (column 7,
-// row 5 on a kit canvas).
+// From the pixel kit: he rests a moment with the pencil ('y', its tip 'k')
+// held upright at his side, brings it across to the paper ('p', lines 'g')
+// with his arm in shadow ('d'), scribbles three times round, then takes it
+// back the way it came. A grid's top-left is at (-2, 0) in Clawd's own
+// coordinates (column 6, row 5 on a kit canvas).
 const WRITE_GRIDS = {
-  in1: ['..ooooooooo.pppp', 'y.ooooooooo.pggp', 'yoooo#ooo#oopppp', 'kooooooooooopggp', '..ooooooooo.pppp', '..o.o...o.o.....', '..o.o...o.o.....'],
-  in2: ['..ooooooooo.pppp', 'y.ooooooooo.pggp', '.yooo#ooo#oopppp', '.okooooooooopggp', '..ooooooooo.pppp', '..o.o...o.o.....', '..o.o...o.o.....'],
-  in3: ['..ooooooooo.pppp', '..yoooooooo.pggp', '..oyo#ooo#oopppp', '..odkooooooopggp', '..ooooooooo.pppp', '..o.o...o.o.....', '..o.o...o.o.....'],
-  in4: ['..ooooooooo.pppp', '..ooyoooooo.pggp', '..oooyooo#oopppp', '..ooddkooooopggp', '..ooooooooo.pppp', '..o.o...o.o.....', '..o.o...o.o.....'],
-  in5: ['..ooooooooo.pppp', '..ooooooooo.pggp', '..ooo#oooo#opppp', '..oooooyykoopggp', '..ooodddooo.pppp', '..o.o...o.o.....', '..o.o...o.o.....'],
-  sc1: ['..ooooooooo.pppp', '..ooooooooo.pggp', '..oooo#ooo#opppp', '..ooooooooyykggp', '..ooooodddo.pppp', '..o.o...o.o.....', '..o.o...o.o.....'],
-  sc2: ['..ooooooooo.pppp', '..ooooooooo.pggp', '..oooo#oooyykppp', '..oooooooddopggp', '..oooooodoo.pppp', '..o.o...o.o.....', '..o.o...o.o.....'],
-  sc3: ['..ooooooooo.pppp', '..ooooooooo.pggp', '..oooo#oooodykpp', '..ooooooooodpggp', '..ooooooddd.pppp', '..o.o...o.o.....', '..o.o...o.o.....'],
-  sc4: ['..ooooooooo.pppp', '..ooooooooo.pggp', '..oooo#ooooopppp', '..oooooooooyykgp', '..ooooooddddpppp', '..o.o...o.o.....', '..o.o...o.o.....'],
+  rest: ['...ooooooooo.pppp', 'y..oo#ooo#oo.pggp', 'yoooooooooooopppp', 'koooooooooooopggp', '...ooooooooo.pppp', '...o.o...o.o.....', '...o.o...o.o.....'],
+  in1: ['...ooooooooo.pppp', '.y.ooooooooo.pggp', '..yooo#ooo#oopppp', '..okooooooooopggp', '...ooooooooo.pppp', '...o.o...o.o.....', '...o.o...o.o.....'],
+  in2: ['...ooooooooo.pppp', '...yoooooooo.pggp', '...oyo#ooo#oopppp', '...odkooooooopggp', '...ooooooooo.pppp', '...o.o...o.o.....', '...o.o...o.o.....'],
+  in3: ['...ooooooooo.pppp', '...ooyoooooo.pggp', '...oooyooo#oopppp', '...ooddkooooopggp', '...ooooooooo.pppp', '...o.o...o.o.....', '...o.o...o.o.....'],
+  in4: ['...ooooooooo.pppp', '...ooooooooo.pggp', '...ooo#oooo#opppp', '...oooooyykoopggp', '...ooodddooo.pppp', '...o.o...o.o.....', '...o.o...o.o.....'],
+  sc1: ['...ooooooooo.pppp', '...ooooooooo.pggp', '...oooo#ooo#opppp', '...ooooooooyykggp', '...ooooodddo.pppp', '...o.o...o.o.....', '...o.o...o.o.....'],
+  sc2: ['...ooooooooo.pppp', '...ooooooooo.pggp', '...oooo#oooyykppp', '...oooooooddopggp', '...oooooodoo.pppp', '...o.o...o.o.....', '...o.o...o.o.....'],
+  sc3: ['...ooooooooo.pppp', '...ooooooooo.pggp', '...oooo#oooodykpp', '...ooooooooodpggp', '...ooooooddd.pppp', '...o.o...o.o.....', '...o.o...o.o.....'],
+  sc4: ['...ooooooooo.pppp', '...ooooooooo.pggp', '...oooo#ooooopppp', '...oooooooooyykgp', '...ooooooddddpppp', '...o.o...o.o.....', '...o.o...o.o.....'],
 } as const
 type WriteFrame = keyof typeof WRITE_GRIDS
 const SCRIBBLE: [WriteFrame, number][] = [['sc1', 0.12], ['sc2', 0.12], ['sc3', 0.12], ['sc4', 0.12]]
 const WRITE_STEPS: [WriteFrame, number][] = [
-  ['in1', 0.6], ['in2', 0.2], ['in3', 0.1], ['in4', 0.1], ['in5', 0.1],
+  ['rest', 1.2], ['in1', 0.1], ['in2', 0.1], ['in3', 0.1], ['in4', 0.1],
   ...SCRIBBLE, ...SCRIBBLE, ...SCRIBBLE,
-  ['in5', 0.1], ['in4', 0.1], ['in3', 0.1], ['in2', 0.2],
+  ['in4', 0.1], ['in3', 0.1], ['in2', 0.1], ['in1', 0.1],
 ]
 
 // ── Search ─────────────────────────────────────────────────────────────────
@@ -454,7 +454,7 @@ export function drawPose(pose: Pose, shades: boolean): string {
     case 'writing':
       // Frames from the pixel kit; his eyes blink, the pencil's tip does not.
       return at((Object.keys(WRITE_GRIDS) as WriteFrame[])
-        .map(f => `<g class="wr-${f}" transform="translate(-1 0)">${gridArt(WRITE_GRIDS[f], true)}</g>`).join(''))
+        .map(f => `<g class="wr-${f}" transform="translate(-2 0)">${gridArt(WRITE_GRIDS[f], true)}</g>`).join(''))
     case 'searching':
       // Frames from the pixel kit; his blink is one of them.
       return at((Object.keys(SEARCH_GRIDS) as SearchFrame[])
