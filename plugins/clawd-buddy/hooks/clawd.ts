@@ -438,7 +438,7 @@ export function drawPose(pose: Pose, shades: boolean): string {
       // up a little dust.
       return at(
         clawd({ eyes: 'flat', legs: px(1, 5, 1, 2) + px(3, 5, 1, 2) + px(7, 5, 1, 2) + g('foot', px(9, 5, 1, 2)) }) +
-          g('vein', `<g transform="translate(-4 -4)">${ANGER_VEIN}</g>`) +
+          g('vein', `<g transform="translate(-4 -4) rotate(45 2.5 2.5)">${ANGER_VEIN}</g>`) +
           px(8.25, 6.5, 0.5, 0.5, GRAY, 'stompL') + px(10.25, 6.5, 0.5, 0.5, GRAY, 'stompR'),
       )
     default:
