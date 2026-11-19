@@ -130,6 +130,21 @@ const YOOHOO_STEPS: [YoohooFrame, number][] = [
   ['up', 0.18], ['wide', 0.18], ['angle', 0.18], ['out', 0.18], ['angle', 0.18], ['wide', 0.18],
 ]
 
+// ── Wave ───────────────────────────────────────────────────────────────────
+// Waving for your OK: the yoohoo's arm flap on his right arm only, with his
+// left arm resting at his side and the yoohoo's eyes, but no blue dot. Built
+// from the yoohoo frames, so it changes when they do.
+const WAVE_REST = [
+  '.............', '.............', '.............', '..ooooooooo..', '..oo#ooo#oo..',
+  'ooooooooooooo', 'ooooooooooooo', '..ooooooooo..', '..o.o...o.o..', '..o.o...o.o..',
+]
+const WAVE_GRIDS = Object.fromEntries(
+  (Object.keys(YOOHOO_GRIDS) as YoohooFrame[]).map(f => [
+    f,
+    YOOHOO_GRIDS[f].map((row, y) => WAVE_REST[y]!.slice(0, 6) + row.slice(6).replace('n', '.')),
+  ]),
+) as Record<YoohooFrame, string[]>
+
 // ── Search ─────────────────────────────────────────────────────────────────
 // From the pixel kit: the magnifying glass slides in over his eye a pixel at a
 // time ('l' is lens, his eye showing big through it), he blinks twice,
@@ -298,6 +313,7 @@ const SWEEP_STEPS: [SweepFrame, number][] = [
 const SWEEP_CSS = framesCss('sw', SWEEP_STEPS)
 const SEARCH_CSS = framesCss('se', SEARCH_STEPS)
 const YOOHOO_CSS = framesCss('yh', YOOHOO_STEPS)
+const WAVE_CSS = framesCss('wv', YOOHOO_STEPS)
 
 export const STYLE = `
   svg{overflow:visible}
@@ -330,11 +346,9 @@ export const STYLE = `
   ${SWEEP_CSS}
   ${SEARCH_CSS}
   ${YOOHOO_CSS}
+  ${WAVE_CSS}
   .dust{opacity:0;animation:dust .9s linear infinite}
   @keyframes dust{0%{opacity:.7;transform:translate(0,0)}100%{opacity:0;transform:translate(2px,-2px)}}
-  .waveA{animation:waveA .9s steps(1) infinite}.waveB{animation:waveB .9s steps(1) infinite}
-  @keyframes waveA{0%,49%{opacity:1}50%,100%{opacity:0}}
-  @keyframes waveB{0%,49%{opacity:0}50%,100%{opacity:1}}
   .key1{animation:key1 .4s steps(1) infinite}.key2{animation:key2 .4s steps(1) infinite}.key3{animation:key3 .4s steps(1) infinite}
   @keyframes key1{0%,40.2%{opacity:1}40.3%,100%{opacity:0}}
   @keyframes key2{0%,40.2%{opacity:0}40.3%,59.6%{opacity:1}59.7%,100%{opacity:0}}
@@ -407,7 +421,8 @@ export function drawPose(pose: Pose, shades: boolean): string {
           px(15, 6, 1, 1, GRAY, 'dust') + px(10, 6, 1, 1, GRAY, 'dust'),
       )
     case 'wave':
-      return at(clawd({ armR: g('waveA', px(10, 1, 2, 2) + px(11, -1, 1, 2)) + g('waveB', px(10, 1, 2, 2) + px(12, -1, 1, 2)), shades }))
+      return at((Object.keys(WAVE_GRIDS) as YoohooFrame[])
+        .map(f => `<g class="wv-${f}" transform="translate(-1 -3)">${gridArt(WAVE_GRIDS[f], true)}</g>`).join(''))
     case 'tap':
       return at(clawd({ eyes: 'flat', legs: px(1, 5, 1, 2) + px(3, 5, 1, 2) + px(7, 5, 1, 2) + g('foot', px(9, 5, 1, 2)) }))
     default:
