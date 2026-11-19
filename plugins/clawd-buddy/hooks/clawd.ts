@@ -299,12 +299,16 @@ const STRETCH_CSS = stretchCss()
 // Oops legs on the pixel grid: the top of each leg stays put under his body
 // (reaching half a pixel up so no seam shows) and its foot sits straight
 // under it, or one pixel to the side, joined at the corner.
-const legsWithFeetAt = (dx: number) =>
-  [1, 3, 7, 9].map(x => px(x, 4.5, 1, 1.5) + px(x + dx, 6, 1, 1)).join('')
+// Each leg steps on its own beat, out of step with the others.
+const legWithFootAt = (x: number, dx: number) => px(x, 4.5, 1, 1.5) + px(x + dx, 6, 1, 1)
 const OOPS_LEG_STEPS: [string, number][] = [['left', 0.125], ['mid', 0.125], ['right', 0.125], ['mid', 0.125]]
-const OOPS_LEGS =
-  g('ol-mid', legsWithFeetAt(0)) + g('ol-left', legsWithFeetAt(-1)) + g('ol-right', legsWithFeetAt(1))
-const OOPS_LEG_CSS = framesCss('ol', OOPS_LEG_STEPS)
+const OOPS_LEGS = [1, 3, 7, 9]
+  .map((x, i) => g(`oleg${i}`, g('ol-mid', legWithFootAt(x, 0)) + g('ol-left', legWithFootAt(x, -1)) + g('ol-right', legWithFootAt(x, 1))))
+  .join('')
+const OOPS_LEG_CSS =
+  framesCss('ol', OOPS_LEG_STEPS) +
+  // the four legs' beats, scrambled: a quarter, a half and three-eighths of a step behind
+  [0, 0.25, 0.125, 0.375].map((d, i) => `.oleg${i} [class^="ol-"]{animation-delay:-${d}s}`).join('')
 
 // A thick pixel wall clock (drawn in the kit style): a grey face with a dark
 // hour hand pointing right and a minute hand that jumps a quarter turn with
