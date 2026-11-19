@@ -295,15 +295,15 @@ function stretchCss(): string {
 }
 const STRETCH_CSS = stretchCss()
 
-// A wall clock: a round wooden frame ('w') round a cream face ('f'), its
-// hour hand at three and its minute hand ticking round.
+// A thick pixel wall clock (drawn in the kit style): a grey face with a dark
+// hour hand pointing right and a minute hand that jumps a quarter turn with
+// every stomp, round from twelve to three, six and nine.
+const CLOCK_GREY = '#8A8A86'
 const WALL_CLOCK =
-  ['..www..', '.wfffw.', 'wfffffw', 'wfffffw', 'wfffffw', '.wfffw.', '..www..']
-    .map((row, y) => [...row].map((c, x) => (c === '.' ? '' : px(x, y, 1, 1, c === 'w' ? BROWN : CREAM))).join(''))
-    .join('') +
-  px(3.5, 3.35, 1.4, 0.3, INK) + // hour hand, pointing at three
-  g('tick', px(3.35, 1.2, 0.3, 2.3, INK)) + // minute hand, from the top to the middle
-  px(3.25, 3.25, 0.5, 0.5, INK)
+  // the face as three overlapping blocks so no seam shows between its rows
+  px(1, 0, 3, 1.5, CLOCK_GREY) + px(0, 1, 5, 3, CLOCK_GREY) + px(1, 3.5, 3, 1.5, CLOCK_GREY) +
+  px(2, 2, 2, 1, INK) + // centre and hour hand, pointing at three
+  g('tick', px(2, 1, 1, 1, INK)) // minute hand, starting at twelve
 
 // ── Sweep ──────────────────────────────────────────────────────────────────
 // The broom stroke, six frames from the pixel kit. A grid's top-left is at
@@ -365,8 +365,8 @@ export const STYLE = `
   @keyframes key3{0%,59.6%{opacity:0}59.7%,100%{opacity:1}}
   .foot{animation:foot .6s steps(1) infinite}
   @keyframes foot{0%,49%{transform:translateY(0)}50%,100%{transform:translateY(-1px)}}
-  .tick{transform-origin:50% 100%;transform-box:fill-box;shape-rendering:geometricPrecision;animation:tick 7.2s steps(12) infinite}
-  @keyframes tick{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .tick{animation:tick 2.4s steps(1) infinite}
+  @keyframes tick{0%,24%{transform:translate(0,0)}25%,49%{transform:translate(1px,1px)}50%,74%{transform:translate(0,2px)}75%,100%{transform:translate(-1px,1px)}}
   .stompL,.stompR{opacity:0;animation:.6s linear infinite}.stompL{animation-name:stompL}.stompR{animation-name:stompR}
   @keyframes stompL{0%{opacity:.85;transform:translate(0,0)}35%{opacity:0;transform:translate(-1px,-1px)}100%{opacity:0}}
   @keyframes stompR{0%{opacity:.85;transform:translate(0,0)}35%{opacity:0;transform:translate(1px,-1px)}100%{opacity:0}}
@@ -439,11 +439,11 @@ export function drawPose(pose: Pose, shades: boolean): string {
       return at((Object.keys(WAVE_GRIDS) as YoohooFrame[])
         .map(f => `<g class="wv-${f}" transform="translate(-1 -3)">${gridArt(WAVE_GRIDS[f], true)}</g>`).join(''))
     case 'tap':
-      // Impatient: a clock on the wall ticks round with every stomp of his foot,
-      // and each stomp kicks up a little dust.
+      // Impatient: the clock on the wall ticks a quarter turn with every stomp
+      // of his foot, and each stomp kicks up a little dust.
       return at(
         clawd({ eyes: 'flat', legs: px(1, 5, 1, 2) + px(3, 5, 1, 2) + px(7, 5, 1, 2) + g('foot', px(9, 5, 1, 2)) }) +
-          `<g transform="translate(-9 -4)">${WALL_CLOCK}</g>` +
+          `<g transform="translate(-5 -5)">${WALL_CLOCK}</g>` +
           px(8.25, 6.5, 0.5, 0.5, GRAY, 'stompL') + px(10.25, 6.5, 0.5, 0.5, GRAY, 'stompR'),
       )
     default:
