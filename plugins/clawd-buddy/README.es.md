@@ -23,11 +23,11 @@ Clawd aparece solo encima del cuadro de texto en la aplicación de escritorio (y
 
 **Cuando te necesita**: te saluda cuando Claude espera tu aprobación o te hace una pregunta, y da golpecitos con el pie si la pregunta lleva un minuto esperando.
 
-**Su día**: café de 8:00 a 10:30, un sándwich de 12:00 a 13:00, dormido de 22:00 a 7:00, adormilado tras 20 minutos de calma y gafas de sol los viernes por la tarde. Con un café caliente en la mano no salta.
+**Su día**: café de 8:00 a 10:30, un sándwich de 12:00 a 13:00, dormido de 22:00 a 7:00, adormilado tras 20 minutos de calma y gafas de sol los viernes por la tarde. Con un café caliente en la mano no saluda.
 
-**Avisos**: salta cuando otra sesión de Claude envía un mensaje a esta.
+**Avisos**: aparece un punto azul sobre su cabeza y agita los brazos (¡yuju!) cuando otra sesión de Claude envía un mensaje a esta.
 
-Comandos: `/clawd-demo` (todos los estados), `/clawd-jump` (un salto), `/clawd-coffee` (una pausa para el café de 30 segundos).
+Comandos: `/clawd-demo` (todos los estados), `/clawd-yoohoo` (un yuju), `/clawd-coffee` (una pausa para el café de 30 segundos).
 
 ## Comentarios
 

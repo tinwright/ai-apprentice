@@ -67,19 +67,19 @@ test('waiting on the person comes first, then reactions, then work, then the tim
 
 test('helpers are their own drawing, so Clawd\'s never changes with them', () => {
   expect(scene('typing', false).startsWith('<svg')).toBe(true)
-  expect(scene('typing', false).includes('scale(.5)')).toBe(false)
-  expect(minis(1).match(/scale\(\.5\)/g)?.length).toBe(1)
-  expect(minis(5).match(/scale\(\.5\)/g)?.length).toBe(2)
+  expect(scene('typing', false).includes('class="mini')).toBe(false)
+  expect(minis(1).match(/class="mini[ "]/g)?.length).toBe(1)
+  expect(minis(5).match(/class="mini[ "]/g)?.length).toBe(2)
 })
 
-test('/clawd-jump makes him jump in the band above the prompt', async ($, on) => {
+test('/clawd-yoohoo makes him wave in the band above the prompt', async ($, on) => {
   mock.clock(on, { now: at(16, 15) })
-  on('command.register', () => ({ value: { command: 'clawd-jump' } }))
+  on('command.register', () => ({ value: { command: 'clawd-yoohoo' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
 
-  const { text } = await $.command.run({ command: 'clawd-jump' } as never)
-  expect(text).toBe('Clawd is jumping!')
+  const { text } = await $.command.run({ command: 'clawd-yoohoo' })
+  expect(text).toBe('Yoohoo! 👋')
 
   const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
   expect((await ui.find({ type: 'Text', text: /pinged/ }))?.text).toBe('a session pinged you!')
@@ -88,7 +88,7 @@ test('/clawd-jump makes him jump in the band above the prompt', async ($, on) =>
 
 test('passing tests earn a ta-da, on every surface', async ($, on) => {
   mock.clock(on, { now: at(16, 15) })
-  on('command.register', () => ({ value: { command: 'clawd-jump' } }))
+  on('command.register', () => ({ value: { command: 'clawd-yoohoo' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('tool.call', () => ({ result: {} }))
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
@@ -101,6 +101,19 @@ test('passing tests earn a ta-da, on every surface', async ($, on) => {
   }
 })
 
+test('/clawd-nap sends him to doze straight away', async ($, on) => {
+  mock.clock(on, { now: at(16, 15, 0) })
+  on('command.register', () => ({ value: { command: 'clawd-nap' } }))
+  on('session.start', (_, e) => ({ cwd: e.cwd }))
+  await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
+
+  const { text } = await $.command.run({ command: 'clawd-nap' })
+  expect(text).toContain('dozing')
+  const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
+  expect((await ui.find({ type: 'Text', text: /dozing/ }))?.text).toContain('dozing')
+  await ui.unmount()
+})
+
 const caption = async ($: Parameters<TestBody>[0], text: RegExp) => {
   const ui = await $.ui.mount({ ...BAND, surface: 'desktop' })
   const found = (await ui.find({ type: 'Text', text }))?.text
@@ -110,7 +123,7 @@ const caption = async ($: Parameters<TestBody>[0], text: RegExp) => {
 
 test('a parallel tool finishing does not end a pending question', async ($, on) => {
   mock.clock(on, { now: at(16, 15) })
-  on('command.register', () => ({ value: { command: 'clawd-jump' } }))
+  on('command.register', () => ({ value: { command: 'clawd-yoohoo' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   let answer = () => {}
   on('tool.call', (_, e) =>
@@ -127,12 +140,12 @@ test('a parallel tool finishing does not end a pending question', async ($, on) 
   expect(await caption($, /needs your OK/)).toBe(undefined)
 })
 
-test('a jump left over from before a restart does not stick', async ($, on) => {
+test('a yoohoo left over from before a restart does not stick', async ($, on) => {
   mock.clock(on, { now: at(16, 15) })
-  on('command.register', () => ({ value: { command: 'clawd-jump' } }))
+  on('command.register', () => ({ value: { command: 'clawd-yoohoo' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
-  await $.command.run({ command: 'clawd-jump' } as never)
+  await $.command.run({ command: 'clawd-yoohoo' } as never)
   expect(await caption($, /pinged/)).toBe('a session pinged you!')
 
   await $.session.start({ cwd: '/', surface: 'desktop', isInteractive: true })
@@ -147,7 +160,7 @@ type Engine = Parameters<TestBody>[0]
 async function boot($: Engine, on: On, tools: (e: { tool: string }) => unknown = () => ({ result: {} }), extra: () => void = () => {}) {
   const clock = mock.clock(on, { now: at(16, 15) })
   extra()
-  on('command.register', () => ({ value: { command: 'clawd-jump' } }))
+  on('command.register', () => ({ value: { command: 'clawd-yoohoo' } }))
   on('session.start', (_, e) => ({ cwd: e.cwd }))
   on('agent.list', () => ({ value: [] }))
   on('tool.call', (_, e) => tools(e) as never)

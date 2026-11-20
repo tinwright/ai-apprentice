@@ -4,15 +4,15 @@ import type { EngineInterface, Register, RenderInput } from 'claude-code'
 import type { Activity, Moment, Waiting } from '../types'
 import {
   ALT, BODY, CAPTION, COFFEE_BREAK_MS, DEMO, DEMO_MS, DOZE_AFTER_MS, H, HELPER_STALE_MS,
-  HOLD_MS, IMPATIENT_AFTER_MS, JUMP_MS, MINI_W, MIN_POSE_MS, MOMENT_MIN_MS, OOPS_COOLDOWN_MS, PROUD_TURN_MS, PUSH_RE,
-  STRETCH_TURN_MS, TEST_RE, U, W,
+  HOLD_MS, IMPATIENT_AFTER_MS, MINI_W, MIN_POSE_MS, MOMENT_MIN_MS, OOPS_COOLDOWN_MS, PROUD_TURN_MS, PUSH_RE,
+  STRETCH_TURN_MS, TEST_RE, U, W, YOOHOO_MS,
   activityFor, choosePose, fridayAt, isPing, minis, phaseAt, scene,
 } from './clawd'
 import type { Pose } from './clawd'
 
 // ── State ──────────────────────────────────────────────────────────────────
 const phase = atom({ plugin: 'clawd-buddy', key: 'phase' } as const, 'awake')
-const isJumping = atom({ plugin: 'clawd-buddy', key: 'isJumping' } as const, false)
+const isYoohoo = atom({ plugin: 'clawd-buddy', key: 'isYoohoo' } as const, false)
 const isSipping = atom({ plugin: 'clawd-buddy', key: 'isSipping' } as const, false)
 const activity = atom({ plugin: 'clawd-buddy', key: 'activity' } as const, 'none')
 const helpers = atom({ plugin: 'clawd-buddy', key: 'helpers' } as const, 0)
@@ -54,7 +54,7 @@ async function startDemo($: EngineInterface) {
 
 // ── Module-level bookkeeping (resets on reload; the atoms persist) ─────────
 let stopTicker: (() => void) | undefined
-let stopJump: (() => void) | undefined
+let stopYoohoo: (() => void) | undefined
 let stopCoffee: (() => void) | undefined
 let stopQuestion: (() => void) | undefined
 let lastActive = 0
@@ -182,11 +182,11 @@ async function coffeeBreak($: EngineInterface) {
   }).cancel
 }
 
-async function jump($: EngineInterface) {
-  stopJump?.()
-  await update($, isJumping, () => true)
-  stopJump = $.clock.after(JUMP_MS, () => {
-    void update($, isJumping, () => false)
+async function yoohoo($: EngineInterface) {
+  stopYoohoo?.()
+  await update($, isYoohoo, () => true)
+  stopYoohoo = $.clock.after(YOOHOO_MS, () => {
+    void update($, isYoohoo, () => false)
   }).cancel
 }
 
@@ -194,9 +194,10 @@ async function jump($: EngineInterface) {
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const result = await next(e)
-    await $.command.register({ name: 'clawd-jump', description: 'Make Clawd jump as if a session just pinged you' })
+    await $.command.register({ name: 'clawd-yoohoo', description: 'Make Clawd wave yoohoo as if a session just pinged you' })
     await $.command.register({ name: 'clawd-coffee', description: 'Give Clawd a cup of coffee for a little while' })
     await $.command.register({ name: 'clawd-demo', description: 'Watch Clawd cycle through all his moods' })
+    await $.command.register({ name: 'clawd-nap', description: 'Let Clawd doze off now, as if 20 quiet minutes had passed' })
 
     running.clear()
     stopActivity?.()
@@ -208,9 +209,9 @@ export const register: Register = on => {
     isCompacting = false
     await update($, moment, () => 'none')
     // Their expiry timers died with the last module; the flags would stick.
-    stopJump?.()
+    stopYoohoo?.()
     stopCoffee?.()
-    await update($, isJumping, () => false)
+    await update($, isYoohoo, () => false)
     await update($, isSipping, () => false)
     workflowAgents.clear()
     await update($, helpers, () => 0)
@@ -236,9 +237,9 @@ export const register: Register = on => {
     return result
   })
 
-  on('command.run', { command: 'clawd-jump' }, async $ => {
-    await jump($)
-    return { text: 'Clawd is jumping!' }
+  on('command.run', { command: 'clawd-yoohoo' }, async $ => {
+    await yoohoo($)
+    return { text: 'Yoohoo! 👋' }
   })
 
   on('command.run', { command: 'clawd-coffee' }, async $ => {
@@ -246,19 +247,25 @@ export const register: Register = on => {
     return { text: 'Clawd is enjoying a coffee ☕' }
   })
 
+  on('command.run', { command: 'clawd-nap' }, async $ => {
+    lastActive = (await $.clock.now()) - DOZE_AFTER_MS - 1
+    await update($, isDozing, () => true)
+    return { text: 'Clawd is dozing off… 💤' }
+  })
+
   on('command.run', { command: 'clawd-demo' }, async $ => {
     await startDemo($)
     return { text: `Clawd's mood show: ${DEMO.length} moods, 3 seconds each 🎬` }
   })
 
-  // Pings from other sessions → jump.
+  // Pings from other sessions → yoohoo.
   on('session.receive', async ($, e, next) => {
-    if (!e.agentId && isPing(e.origin, e.text)) await jump($)
+    if (!e.agentId && isPing(e.origin, e.text)) await yoohoo($)
     return next(e)
   })
 
   on('prompt.submit', async ($, e, next) => {
-    if (isPing(e.origin, e.text)) await jump($)
+    if (isPing(e.origin, e.text)) await yoohoo($)
     await touch($)
     pendingAsks.clear()
     await setWaiting($, 'none')
@@ -426,14 +433,14 @@ export const register: Register = on => {
       dozing: await read($, isDozing),
       working: e.props.isWorking,
     })
-    const pinged = await read($, isJumping)
-    // No jumping with hot coffee (or lunch) in hand.
-    const pose: Pose = pinged && base !== 'coffee' && base !== 'lunch' ? 'jump' : base
+    const pinged = await read($, isYoohoo)
+    // No yoohoo with hot coffee (or lunch) in hand: he just says so.
+    const pose: Pose = pinged && base !== 'coffee' && base !== 'lunch' ? 'yoohoo' : base
     const shades = await read($, isFriday)
     const helperCount = await read($, helpers)
     const showHelpers = helperCount > 0 && pose !== 'sleep'
 
-    let caption = pinged ? CAPTION.jump : CAPTION[pose]
+    let caption = pinged ? CAPTION.yoohoo : CAPTION[pose]
     if (!caption && shades) caption = "it's Friday 😎"
     if (base === 'sleep' && (await read($, isDozing)) && (await read($, phase)) !== 'sleep') caption = 'dozing…'
     if (showHelpers) caption = [caption, `+ ${helperCount} helper${helperCount > 1 ? 's' : ''}`].filter(Boolean).join(' · ')
