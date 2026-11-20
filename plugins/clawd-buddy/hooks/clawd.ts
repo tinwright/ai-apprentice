@@ -159,15 +159,13 @@ const TADA_GRIDS = {
   angle: ['.....................', '.....................', '....oo.........oo....', '....ooo.......ooo....', '.....ooooooooooo.....', '......oo#ooo#oo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......'],
   up: ['.....................', '.....................', '.....oo.......oo.....', '.....oo.......oo.....', '.....ooooooooooo.....', '......oo#ooo#oo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......'],
   crouch: ['.....................', '......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oouooouoo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '.......o.o.o.o.......', '.....................'],
-  // leaving the ground with his legs still bent: the crouch, a pixel up (not a kit frame)
-  lift: ['......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oouooouoo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '.......o.o.o.o.......', '.....................', '.....................'],
-  jump: ['......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oouooouoo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......', '.....................', '.....................'],
+  jump: ['......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oouooouoo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '.......o.o.o.o.......', '.....................', '.....................'],
   land: ['.....................', '......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oo#ooo#oo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......', '.....................'],
 } as const
 type TadaFrame = keyof typeof TADA_GRIDS
 const TADA_STEPS: [TadaFrame, number][] = [
   ['rest', 0.3], ['squash', 0.12], ['rest', 0.1], ['wide', 0.1], ['angle', 0.1], ['up', 0.1],
-  ['crouch', 0.15], ['lift', 0.1], ['jump', 0.18],
+  ['crouch', 0.15], ['jump', 0.18], // legs still bent as he leaves the ground
   // gravity: he drops back down in half the time he took to go up
   ['land', 0.06], ['angle', 0.05], ['wide', 0.05],
   ['rest', 1.4], // back on the ground, while the last of the star dust fades
