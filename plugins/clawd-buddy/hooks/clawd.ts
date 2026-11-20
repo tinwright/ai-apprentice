@@ -159,13 +159,19 @@ const TADA_GRIDS = {
   angle: ['.....................', '.....................', '....oo.........oo....', '....ooo.......ooo....', '.....ooooooooooo.....', '......oo#ooo#oo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......'],
   up: ['.....................', '.....................', '.....oo.......oo.....', '.....oo.......oo.....', '.....ooooooooooo.....', '......oo#ooo#oo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......'],
   crouch: ['.....................', '......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oouooouoo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '.......o.o.o.o.......', '.....................'],
+  // a quick push-off: the jump pose a pixel lower, shown only briefly
+  rise: ['......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oouooouoo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '.......o.o.o.o.......', '.....................', '.....................'],
   jump: ['......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oouooouoo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '.......o.o.o.o.......', '.....................', '.....................'],
   land: ['.....................', '......oo.....oo......', '......oo.....oo......', '......ooooooooo......', '......oo#ooo#oo......', '......ooooooooo......', '......ooooooooo......', '......ooooooooo......', '......o.o...o.o......', '......o.o...o.o......', '.....................'],
 } as const
 type TadaFrame = keyof typeof TADA_GRIDS
+// how far each in-air frame is raised
+const TADA_LIFT: Partial<Record<TadaFrame, number>> = { rise: -1, jump: -2 }
 const TADA_STEPS: [TadaFrame, number][] = [
   ['rest', 0.3], ['squash', 0.12], ['rest', 0.1], ['wide', 0.1], ['angle', 0.1], ['up', 0.1],
-  ['crouch', 0.15], ['jump', 0.18], // legs still bent as he leaves the ground
+  ['crouch', 0.15],
+  // a fast push-off, then he hangs at the top like a real jump
+  ['rise', 0.05], ['jump', 0.26],
   // gravity: he drops back down in half the time he took to go up
   ['land', 0.06], ['angle', 0.05], ['wide', 0.05],
   ['rest', 1.4], // back on the ground, while the last of the star dust fades
@@ -190,7 +196,7 @@ function tadaStarsCss(): string {
   let jumpAt = 0
   let landEnd = 0
   for (const [frame, d] of TADA_STEPS) {
-    if (frame === 'jump') jumpAt = t
+    if (frame === 'rise') jumpAt = t
     if (frame === 'land') landEnd = t + d
     t += d
   }
@@ -538,7 +544,7 @@ export function drawPose(pose: Pose, shades: boolean): string {
         `<g transform="translate(-5 -4)">` +
           (Object.keys(TADA_GRIDS) as TadaFrame[])
             // the jump itself goes two pixels higher than drawn in the kit
-            .map(f => g(`td-${f}`, f === 'jump' ? `<g transform="translate(0 -2)">${gridArt(TADA_GRIDS[f], true)}</g>` : gridArt(TADA_GRIDS[f], true)))
+            .map(f => g(`td-${f}`, TADA_LIFT[f] ? `<g transform="translate(0 ${TADA_LIFT[f]})">${gridArt(TADA_GRIDS[f], true)}</g>` : gridArt(TADA_GRIDS[f], true)))
             .join('') +
           g('tdstars', TADA_SPARKLES) +
           `</g>`,
