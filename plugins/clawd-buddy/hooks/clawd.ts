@@ -171,9 +171,9 @@ const TADA_STEPS: [TadaFrame, number][] = [
   ['rest', 0.3], ['squash', 0.12], ['rest', 0.1], ['wide', 0.1], ['angle', 0.1], ['up', 0.1],
   ['crouch', 0.15],
   // a fast push-off, then he hangs at the top like a real jump
-  ['rise', 0.05], ['jump', 0.26],
+  ['rise', 0.05], ['jump', 0.2],
   // gravity: he drops back down in half the time he took to go up
-  ['land', 0.06], ['angle', 0.05], ['wide', 0.05],
+  ['land', 0.09], ['angle', 0.05], ['wide', 0.05],
   ['rest', 1.4], // back on the ground, while the last of the star dust fades
 ]
 // Star dust: two four-point sparkles with bright centres that twinkle between
