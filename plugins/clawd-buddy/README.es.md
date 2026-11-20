@@ -17,7 +17,7 @@ En Claude Code, añade una vez el marketplace de tinwright y después instala el
 
 Clawd aparece solo encima del cuadro de texto en la aplicación de escritorio (y como una línea de estado en la terminal). Escribe `/clawd-demo` para ver sus 18 estados de ánimo, tres segundos cada uno. Una etiqueta corta a su lado indica lo que está haciendo.
 
-**Mientras Claude trabaja**: una burbuja de pensamiento cuando piensa, un teclado diminuto cuando ejecuta comandos, un bloc de notas cuando edita archivos, una lupa cuando busca y un mini Clawd a su lado por cada agente auxiliar.
+**Mientras Claude trabaja**: una burbuja de pensamiento cuando piensa, un teclado diminuto cuando ejecuta comandos, un bloc de notas cuando edita archivos, una lupa cuando busca y un mini Clawd a su lado por cada agente auxiliar, incluidos los de un workflow. Cada pose se mantiene un momento, para que no parpadee entre llamadas rápidas a herramientas.
 
 **Según cómo salga**: ojos muy abiertos y un «!» cuando falla un comando, un «ta-da» cuando pasan las pruebas o termina una tarea larga, un gran estiramiento tras una muy larga y un pulgar arriba después de un `git push`.
 

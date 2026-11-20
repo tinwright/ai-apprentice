@@ -17,6 +17,13 @@ export const IMPATIENT_AFTER_MS = 60_000 // tap his foot after a question waits 
 export const PROUD_TURN_MS = 90_000 // a turn this long earns a ta-da
 export const STRETCH_TURN_MS = 5 * 60_000 // a turn this long earns a stretch
 
+// Smoothing: how long poses hold so Clawd doesn't flicker between them.
+export const HOLD_MS = 1000 // a finished tool's pose stays this long before he falls back
+export const MIN_POSE_MS = 600 // a new activity shows at least this long before another replaces it
+export const MOMENT_MIN_MS = 1200 // a reaction shows at least this long before new work ends it
+export const OOPS_COOLDOWN_MS = 8000 // at most one "oops!" per this long
+export const HELPER_STALE_MS = 10 * 60_000 // a workflow agent unseen this long is dropped
+
 export function phaseAt(ms: number): Phase {
   const d = new Date(ms)
   const m = d.getHours() * 60 + d.getMinutes()
@@ -55,7 +62,7 @@ export const PUSH_RE = /\bgit\s+push\b/
 
 // ── Pixel art ──────────────────────────────────────────────────────────────
 export const U = 3.5 // px per pixel
-export const W = 36
+export const W = 32
 export const H = 14
 export const OX = 12
 export const OY = 6 // Clawd's top-left in the scene (a row of headroom above him for the ta-da jump)
@@ -173,7 +180,7 @@ const TADA_STEPS: [TadaFrame, number][] = [
   // a fast push-off, then he hangs at the top like a real jump
   ['rise', 0.05], ['jump', 0.2],
   // gravity: he drops back down in half the time he took to go up
-  ['land', 0.09], ['angle', 0.05], ['wide', 0.05],
+  ['land', 0.12], ['angle', 0.05], ['wide', 0.05],
   ['rest', 1.4], // back on the ground, while the last of the star dust fades
 ]
 // Star dust: two four-point sparkles with bright centres that twinkle between
@@ -459,8 +466,8 @@ export const STYLE = `
   @keyframes scribble{0%,32%{transform:translate(0,0)}33%,65%{transform:translate(1px,0)}66%,100%{transform:translate(1px,1px)}}
   .d1,.d2,.d3{opacity:0;animation:dot 1.8s steps(1) infinite}.d2{animation-delay:.3s}.d3{animation-delay:.6s}
   @keyframes dot{0%,19%{opacity:0}20%,85%{opacity:1}86%,100%{opacity:0}}
-  .startle{animation:startle .5s steps(1) 2}
-  @keyframes startle{0%,49%{transform:translateY(-1px)}50%,100%{transform:translateY(0)}}
+  .startle{animation:startle 1.6s steps(1) infinite}
+  @keyframes startle{0%,14%{transform:translateY(-1px)}15%,29%{transform:translateY(0)}30%,44%{transform:translateY(-1px)}45%,100%{transform:translateY(0)}}
   ${STRETCH_CSS}
   ${OOPS_LEG_CSS}
   ${SWEEP_CSS}
@@ -592,22 +599,30 @@ const mini = (left: string, right: string, cls = 'mini') =>
 const MINI = mini('tapL', 'tapR')
 const MINI_TOP = mini('tapR', 'tapL', 'mini mini-top')
 const MINI_HEIGHT = 7 * MINI_SCALE // helper pixels from head to feet
-function helperStack(count: number, x: number): string {
-  if (count <= 0) return ''
-  // the top helper stands one helper pixel above the bottom one's head
-  const top = count > 1 ? `<g transform="translate(0 ${-8 * MINI_SCALE})">${MINI_TOP}</g>` : ''
-  return `<g transform="translate(${x} ${OY + 7 - MINI_HEIGHT})">${MINI + top}</g>`
-}
-
-export function scene(pose: Pose, shades: boolean, helperCount: number): string {
+/** Clawd alone. Helpers are a separate drawing, so a helper coming or going doesn't restart his animations. */
+export function scene(pose: Pose, shades: boolean): string {
   const ground = `<rect x="2" y="${OY + 7}" width="${W - 4}" height="1" fill="${INK}" opacity=".18"/>`
-  const minis =
-    pose === 'sleep'
-      ? ''
-      : helperStack(Math.min(helperCount, 2), pose === 'typing' ? 172 / 7 : 200 / 7)
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W * U}" height="${H * U}" shape-rendering="crispEdges">` +
-    `<style>${STYLE}</style>${ground}${drawPose(pose, shades)}${minis}</svg>`
+    `<style>${STYLE}</style>${ground}${drawPose(pose, shades)}</svg>`
+  )
+}
+
+// The helpers are their own drawing beside Clawd's, so one coming or going
+// doesn't restart his animations. Wide enough for a helper and its arms.
+export const MINI_W = 9
+
+/** Up to two helpers, the second standing on the first's head. */
+export function minis(helperCount: number): string {
+  const count = Math.min(helperCount, 2)
+  const ground = `<rect x="0" y="${OY + 7}" width="${MINI_W - 1}" height="1" fill="${INK}" opacity=".18"/>`
+  // the top helper stands one helper pixel above the bottom one's head
+  const top = count > 1 ? `<g transform="translate(0 ${-8 * MINI_SCALE})">${MINI_TOP}</g>` : ''
+  // whole helper pixels in from the left, so its arm starts on the edge
+  const drawn = count > 0 ? `<g transform="translate(${MINI_SCALE} ${OY + 7 - MINI_HEIGHT})">${MINI + top}</g>` : ''
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${MINI_W} ${H}" width="${MINI_W * U}" height="${H * U}" shape-rendering="crispEdges">` +
+    `<style>${STYLE}</style>${ground}${drawn}</svg>`
   )
 }
 

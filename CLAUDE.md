@@ -67,7 +67,8 @@ Commit messages are conventional commits scoped to the plugin: `feat(word-count)
 ### Site
 
 The catalog site at https://tinwright.github.io/ai-apprentice is built by `tinwright.github.io` from a
-checkout of this repo, hourly and on demand; nothing here builds or deploys it. It reads every
+checkout of this repo, hourly and on demand; nothing here builds or deploys it, but
+`.github/workflows/site.yml` starts that build after every push to main. It reads every
 plugin's READMEs and `screenshot.png`. `site.config.js` holds the title, tagline, languages and
 per-plugin overrides (`kicker`, `title`, `focus`, `hidden`), and `scripts/site.mjs` the nouns, the
 Type fact and the install steps on each page. To see it, run `npm run dev` in

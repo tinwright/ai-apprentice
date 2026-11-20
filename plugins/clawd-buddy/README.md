@@ -17,7 +17,7 @@ In Claude Code, add the tinwright marketplace once, then install the plugin:
 
 Clawd appears above the prompt by himself, in the desktop app (and as a one-line status in the terminal). Type `/clawd-demo` to watch all 18 of his moods, three seconds each. A short label next to him says what he's doing.
 
-**While Claude works**: a thought bubble while it thinks; a tiny keyboard while it runs commands; a notepad while it edits files; a magnifying glass while it searches; a mini Clawd beside him for each helper agent.
+**While Claude works**: a thought bubble while it thinks; a tiny keyboard while it runs commands; a notepad while it edits files; a magnifying glass while it searches; a mini Clawd beside him for each helper agent, workflow agents included. Each pose holds for a moment, so quick tool calls don't make him flicker.
 
 **How things turned out**: wide eyes and a "!" when a command fails; a ta-da when tests pass or a long task finishes; a big stretch after a very long one; a thumbs-up after a `git push`.
 

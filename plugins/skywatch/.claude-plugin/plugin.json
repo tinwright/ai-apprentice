@@ -1,0 +1,37 @@
+{
+  "name": "skywatch",
+  "displayName": "Skywatch",
+  "description": "A sky behind the chat that follows the sun where you are, with a small sun or a moon in its real phase. It draws only the sky and leaves the space above the prompt free, so it sits alongside Clawd Buddy or any other mod there.",
+  "author": {
+    "name": "Sam Thomas"
+  },
+  "userConfig": {
+    "sky": {
+      "type": "string",
+      "title": "Sky",
+      "description": "live follows the sun where you are. morning, day, evening or night holds that sky all the time, to escape into a mood. /skywatch night and the like switch it for now.",
+      "options": [
+        "live",
+        "morning",
+        "day",
+        "evening",
+        "night"
+      ],
+      "default": "live"
+    },
+    "latitude": {
+      "type": "number",
+      "title": "Latitude",
+      "description": "Where you are, in degrees north (negative for south), for real sunrise and sunset. Two decimal places is plenty. Leave it and longitude empty for a plain 06:00 to 18:00 day.",
+      "min": -90,
+      "max": 90
+    },
+    "longitude": {
+      "type": "number",
+      "title": "Longitude",
+      "description": "Where you are, in degrees east (negative for west).",
+      "min": -180,
+      "max": 180
+    }
+  }
+}

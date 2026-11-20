@@ -1,11 +1,12 @@
 import { atom, read, update } from 'claude-code'
-import type { EngineInterface, Register } from 'claude-code'
+import type { EngineInterface, Register, RenderInput } from 'claude-code'
 
 import type { Activity, Moment, Waiting } from '../types'
 import {
-  ALT, CAPTION, COFFEE_BREAK_MS, DEMO, DEMO_MS, DOZE_AFTER_MS, H, IMPATIENT_AFTER_MS, YOOHOO_MS,
-  PROUD_TURN_MS, PUSH_RE, STRETCH_TURN_MS, TEST_RE, U, W,
-  activityFor, choosePose, fridayAt, isPing, phaseAt, scene,
+  ALT, BODY, CAPTION, COFFEE_BREAK_MS, DEMO, DEMO_MS, DOZE_AFTER_MS, H, HELPER_STALE_MS,
+  HOLD_MS, IMPATIENT_AFTER_MS, MINI_W, MIN_POSE_MS, MOMENT_MIN_MS, OOPS_COOLDOWN_MS, PROUD_TURN_MS, PUSH_RE,
+  STRETCH_TURN_MS, TEST_RE, U, W, YOOHOO_MS,
+  activityFor, choosePose, fridayAt, isPing, minis, phaseAt, scene,
 } from './clawd'
 import type { Pose } from './clawd'
 
@@ -20,6 +21,18 @@ const waiting = atom({ plugin: 'clawd-buddy', key: 'waiting' } as const, 'none')
 const isDozing = atom({ plugin: 'clawd-buddy', key: 'isDozing' } as const, false)
 const isFriday = atom({ plugin: 'clawd-buddy', key: 'isFriday' } as const, false)
 const demoStep = atom({ plugin: 'clawd-buddy', key: 'demoStep' } as const, -1)
+
+// Terminal: Clawd's glyph in his orange, then the caption in the terminal's own
+// text colour (orange text is hard to read on a light theme).
+function terminalRow($: EngineInterface, e: RenderInput<'AbovePrompt', 'terminal'>, caption: string) {
+  const { Box, Text } = $.ui.resolve(e)
+  return (
+    <Box flexDirection="row">
+      <Text color={BODY}>▐▛█▜▌</Text>
+      <Text>{` ${caption}`}</Text>
+    </Box>
+  )
+}
 
 let stopDemo: (() => void) | undefined
 
@@ -43,32 +56,88 @@ async function startDemo($: EngineInterface) {
 let stopTicker: (() => void) | undefined
 let stopYoohoo: (() => void) | undefined
 let stopCoffee: (() => void) | undefined
-let stopMoment: (() => void) | undefined
 let stopQuestion: (() => void) | undefined
 let lastActive = 0
 let turnStartedAt = 0
 let isTurnRunning = false
+let lastOopsAt = -Infinity
+
+// ── Activity, smoothed ─────────────────────────────────────────────────────
+// The oldest running call sets the pose, so short calls beside a long one don't
+// flip it. A finished pose holds HOLD_MS; a new one stays at least MIN_POSE_MS.
 const running = new Map<string, Activity>()
+let shownActivity: Activity = 'none'
+let shownAt = 0
+let stopActivity: (() => void) | undefined
 
-async function setActivity($: EngineInterface) {
-  const last = [...running.values()].pop() ?? 'none'
-  await update($, activity, prev => (prev === last ? prev : last))
+async function setActivity($: EngineInterface, isDue = false) {
+  stopActivity?.()
+  stopActivity = undefined
+  const target: Activity = running.values().next().value ?? 'none'
+  if (target === shownActivity) return
+  const now = await $.clock.now()
+  const wait = isDue
+    ? 0
+    : target === 'none'
+      ? HOLD_MS
+      : shownActivity === 'none'
+        ? 0
+        : Math.max(0, MIN_POSE_MS - (now - shownAt))
+  if (wait > 0) {
+    stopActivity = $.clock.after(wait, () => void setActivity($, true)).cancel
+    return
+  }
+  shownActivity = target
+  shownAt = now
+  await update($, activity, prev => (prev === target ? prev : target))
 }
 
-async function touch($: EngineInterface) {
-  lastActive = await $.clock.now()
-  await update($, isDozing, prev => (prev ? false : prev))
-}
+// ── Reactions (moments) ────────────────────────────────────────────────────
+// A reaction shows for its own time, but new work ends it once it has shown
+// MOMENT_MIN_MS, so a finished turn's "ta-da" never hides the next turn's work.
+let stopMoment: (() => void) | undefined
+let momentAt = 0
+let momentEndsAt = 0
+let isCompacting = false
 
-async function flash($: EngineInterface, m: Moment, ms: number) {
+async function endMomentAt($: EngineInterface, at: number) {
   stopMoment?.()
-  await update($, moment, () => m)
-  stopMoment = $.clock.after(ms, () => {
-    void update($, moment, () => 'none')
+  stopMoment = undefined
+  momentEndsAt = at
+  if (!Number.isFinite(at)) return // held until something ends it (compaction)
+  const now = await $.clock.now()
+  if (at <= now) {
+    stopMoment = undefined
+    await update($, moment, prev => (prev === 'none' ? prev : 'none'))
+    return
+  }
+  stopMoment = $.clock.after(at - now, () => {
+    void update($, moment, prev => (prev === 'none' ? prev : 'none'))
   }).cancel
 }
 
-async function setWaiting($: EngineInterface, w: Waiting) {
+async function flash($: EngineInterface, m: Moment, ms: number) {
+  momentAt = await $.clock.now()
+  await update($, moment, () => m)
+  await endMomentAt($, momentAt + ms)
+}
+
+async function yieldMoment($: EngineInterface) {
+  if (isCompacting || (await read($, moment)) === 'none') return
+  const soonest = Math.max(await $.clock.now(), momentAt + MOMENT_MIN_MS)
+  if (soonest < momentEndsAt) await endMomentAt($, soonest)
+}
+
+// ── Waiting on the person ──────────────────────────────────────────────────
+// The wave shows only while a person is asked: a permission prompt or a
+// question. tool.check's "ask" alone isn't enough (auto mode's classifier
+// settles it with nobody asked), so asks are remembered until a prompt shows.
+const ANY_TOOL = '*'
+let waitingFor: string | undefined
+const pendingAsks = new Map<string, string>() // tool_use_id → tool name
+
+async function setWaiting($: EngineInterface, w: Waiting, owner?: string) {
+  waitingFor = w === 'none' ? undefined : (owner ?? ANY_TOOL)
   if (w !== 'question') stopQuestion?.()
   await update($, waiting, prev => (prev === w ? prev : w))
   if (w === 'question') {
@@ -77,6 +146,32 @@ async function setWaiting($: EngineInterface, w: Waiting) {
       void update($, waiting, prev => (prev === 'question' ? 'impatient' : prev))
     }).cancel
   }
+}
+
+/** The newest pending ask for this tool, else the newest of any. */
+function askFor(tool?: string): string | undefined {
+  const asks = [...pendingAsks]
+  return (asks.reverse().find(([, t]) => t === tool) ?? asks[0])?.[0]
+}
+
+// ── Helpers (mini Clawds) ────────────────────────────────────────────────────
+// Subagents come from the live agent list. Workflow agents aren't in it, so
+// they're tracked from agent.spawn until their loop's turn.complete, with a
+// staleness cutoff in case that never arrives.
+const LIVE = new Set(['pending', 'running', 'waiting'])
+const workflowAgents = new Map<string, number>() // agent id → last seen
+
+async function syncHelpers($: EngineInterface) {
+  const now = await $.clock.now()
+  for (const [id, seen] of workflowAgents) if (now - seen > HELPER_STALE_MS) workflowAgents.delete(id)
+  const listed = (await $.agent.list()).filter(a => LIVE.has(a.status)).length
+  const n = listed + workflowAgents.size
+  await update($, helpers, prev => (prev === n ? prev : n))
+}
+
+async function touch($: EngineInterface) {
+  lastActive = await $.clock.now()
+  await update($, isDozing, prev => (prev ? false : prev))
 }
 
 async function coffeeBreak($: EngineInterface) {
@@ -105,10 +200,24 @@ export const register: Register = on => {
     await $.command.register({ name: 'clawd-nap', description: 'Let Clawd doze off now, as if 20 quiet minutes had passed' })
 
     running.clear()
+    stopActivity?.()
+    shownActivity = 'none'
     await update($, activity, () => 'none')
-    await update($, waiting, () => 'none')
+    pendingAsks.clear()
+    await setWaiting($, 'none')
+    stopMoment?.()
+    isCompacting = false
     await update($, moment, () => 'none')
+    // Their expiry timers died with the last module; the flags would stick.
+    stopYoohoo?.()
+    stopCoffee?.()
+    await update($, isYoohoo, () => false)
+    await update($, isSipping, () => false)
+    workflowAgents.clear()
     await update($, helpers, () => 0)
+    // A demo's ticker would otherwise tick -1 back to 0 and restart it.
+    stopDemo?.()
+    stopDemo = undefined
     await update($, demoStep, () => -1)
     lastActive = await $.clock.now()
 
@@ -120,6 +229,7 @@ export const register: Register = on => {
       await update($, isFriday, prev => (prev === fri ? prev : fri))
       const doze = !isTurnRunning && now - lastActive > DOZE_AFTER_MS
       await update($, isDozing, prev => (prev === doze ? prev : doze))
+      await syncHelpers($)
     }
     await refresh()
     stopTicker?.()
@@ -157,6 +267,7 @@ export const register: Register = on => {
   on('prompt.submit', async ($, e, next) => {
     if (isPing(e.origin, e.text)) await yoohoo($)
     await touch($)
+    pendingAsks.clear()
     await setWaiting($, 'none')
     return next(e)
   })
@@ -169,20 +280,26 @@ export const register: Register = on => {
 
   // Turn timing → ta-da or stretch at the end of long work.
   on('turn.start', async ($, e, next) => {
-    if (e.agentId === undefined) {
-      turnStartedAt = await $.clock.now()
-      isTurnRunning = true
-      await touch($)
+    if (e.agentId !== undefined) {
+      if (workflowAgents.has(e.agentId)) workflowAgents.set(e.agentId, await $.clock.now())
+      return next(e)
     }
+    turnStartedAt = await $.clock.now()
+    isTurnRunning = true
+    await touch($)
+    await yieldMoment($)
     return next(e)
   })
 
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
+    if (e.agentId !== undefined) workflowAgents.delete(e.agentId)
+    await syncHelpers($)
     if (e.agentId === undefined) {
       isTurnRunning = false
       running.clear()
       await setActivity($)
+      pendingAsks.clear()
       await setWaiting($, 'none')
       await touch($)
       const took = (await $.clock.now()) - turnStartedAt
@@ -194,66 +311,96 @@ export const register: Register = on => {
 
   // Tools → typing / writing / searching, plus oops, tests passing and pushes.
   on('tool.call', async ($, e, next) => {
-    if (e.agentId !== undefined) return next(e)
+    if (e.agentId !== undefined) {
+      if (workflowAgents.has(e.agentId)) workflowAgents.set(e.agentId, await $.clock.now())
+      // A helper's approved call ends the wave it owns; its activity isn't Clawd's.
+      try {
+        return await next(e)
+      } finally {
+        if (e.tool_use_id) {
+          pendingAsks.delete(e.tool_use_id)
+          if (waitingFor === e.tool_use_id) await setWaiting($, 'none')
+        }
+      }
+    }
 
     const id = e.tool_use_id ?? `${e.tool}:${Math.random()}`
     const isQuestion = e.tool === 'AskUserQuestion'
     const act = activityFor(e.tool)
     if (act !== 'none') {
+      await yieldMoment($)
       running.set(id, act)
       await setActivity($)
     }
-    if (isQuestion) await setWaiting($, 'question')
+    if (isQuestion) await setWaiting($, 'question', id)
 
-    const command = e.tool === 'Bash' ? String((e as { command?: unknown }).command ?? '') : ''
+    const isShell = e.tool === 'Bash' || e.tool === 'PowerShell'
+    const command = isShell ? String((e as { command?: unknown }).command ?? '') : ''
     try {
       const result = await next(e)
       const failed = result.isError === true
-      if (failed && !isQuestion) await flash($, 'oops', 2500)
-      else if (!failed && PUSH_RE.test(command)) await flash($, 'thumbs', 4000)
+      const now = await $.clock.now()
+      // Only a failing command says "oops", and not more than once in a while:
+      // a missing file or a stale edit is routine, not a surprise.
+      if (failed && isShell && now - lastOopsAt >= OOPS_COOLDOWN_MS) {
+        lastOopsAt = now
+        await flash($, 'oops', 2500)
+      } else if (!failed && PUSH_RE.test(command)) await flash($, 'thumbs', 4000)
       else if (!failed && TEST_RE.test(command)) await flash($, 'proud', 3500)
       return result
     } finally {
       running.delete(id)
+      pendingAsks.delete(id)
       await setActivity($)
       await touch($)
-      const w = await read($, waiting)
-      if (w !== 'none') await setWaiting($, 'none')
+      // Only the call Clawd is waiting on ends the wait, not a parallel one finishing.
+      if (waitingFor === id || waitingFor === ANY_TOOL) await setWaiting($, 'none')
     }
   })
 
-  // Waiting on your approval → wave.
+  // An ask is remembered, not shown: it may never reach a person.
   on('tool.check', async ($, e, next) => {
     const result = await next(e)
-    if (e.agentId === undefined && e.tool_use_id && result.decision === 'ask') await setWaiting($, 'approval')
+    if (e.tool_use_id && result.decision === 'ask') pendingAsks.set(e.tool_use_id, e.tool)
     return result
   })
 
+  // A person is being asked → wave, owned by the call it's about.
+  on('classic.PermissionRequest', async ($, e, next) => {
+    await setWaiting($, 'approval', askFor(e.tool_name))
+    return next(e)
+  })
+
   on('classic.Notification', async ($, e, next) => {
-    if (e.notification_type === 'permission_prompt') await setWaiting($, 'approval')
+    if (e.notification_type === 'permission_prompt' && waitingFor === undefined) await setWaiting($, 'approval', askFor())
+    return next(e)
+  })
+
+  on('classic.PermissionDenied', async ($, e, next) => {
+    pendingAsks.delete(e.tool_use_id)
+    if (waitingFor === e.tool_use_id) await setWaiting($, 'none')
     return next(e)
   })
 
   // Helpers → mini Clawds.
   on('agent.spawn', async ($, e, next) => {
     const result = await next(e)
-    await update($, helpers, n => n + 1)
+    // Only a started agent counts: a denied spawn has no id, and an agent with
+    // none (remote) raises no turn.complete that could ever remove it.
+    if (e.workflow && !result.deny && result.agentId) workflowAgents.set(result.agentId, await $.clock.now())
+    await syncHelpers($)
     return result
   })
 
-  on('classic.SubagentStop', async ($, e, next) => {
-    await update($, helpers, n => Math.max(0, n - 1))
-    return next(e)
-  })
-
-  // Compacting → sweeping.
+  // Compacting → sweeping, which ends as soon as compaction does (after its minimum).
   on('session.compact', async ($, e, next) => {
-    stopMoment?.()
-    await update($, moment, () => 'sweep')
+    isCompacting = true
+    await flash($, 'sweep', Number.POSITIVE_INFINITY)
     try {
       return await next(e)
     } finally {
-      await flash($, 'sweep', 3000)
+      isCompacting = false
+      await yieldMoment($)
     }
   })
 
@@ -264,13 +411,14 @@ export const register: Register = on => {
     const demo = step >= 0 ? DEMO[step] : undefined
     if (demo) {
       if (e.surface === 'terminal') {
-        const { Text } = $.ui.resolve(e)
-        return <Text color="#D97757">{`▐▛█▜▌ ${demo.caption} (${step + 1}/${DEMO.length})`}</Text>
+        return terminalRow($, e, `${demo.caption} (${step + 1}/${DEMO.length})`)
       }
       const { Box, Text, Svg } = $.ui.resolve(e)
+      const demoHelpers = demo.helpers ?? 0
       return (
         <Box flexDirection="row" alignItems="center">
-          <Svg source={scene(demo.pose, demo.shades ?? false, demo.helpers ?? 0)} alt={ALT[demo.pose]} width={W * U} height={H * U} isInteractive />
+          <Svg source={scene(demo.pose, demo.shades ?? false)} alt={ALT[demo.pose]} width={W * U} height={H * U} isInteractive />
+          {demoHelpers > 0 ? <Svg source={minis(demoHelpers)} alt={`${demoHelpers} mini Clawds`} width={MINI_W * U} height={H * U} isInteractive /> : null}
           <Text dimColor>{`${demo.caption}  (${step + 1}/${DEMO.length})`}</Text>
         </Box>
       )
@@ -290,21 +438,22 @@ export const register: Register = on => {
     const pose: Pose = pinged && base !== 'coffee' && base !== 'lunch' ? 'yoohoo' : base
     const shades = await read($, isFriday)
     const helperCount = await read($, helpers)
+    const showHelpers = helperCount > 0 && pose !== 'sleep'
 
     let caption = pinged ? CAPTION.yoohoo : CAPTION[pose]
     if (!caption && shades) caption = "it's Friday 😎"
     if (base === 'sleep' && (await read($, isDozing)) && (await read($, phase)) !== 'sleep') caption = 'dozing…'
-    if (helperCount > 0 && pose !== 'sleep') caption = [caption, `+ ${helperCount} helper${helperCount > 1 ? 's' : ''}`].filter(Boolean).join(' · ')
+    if (showHelpers) caption = [caption, `+ ${helperCount} helper${helperCount > 1 ? 's' : ''}`].filter(Boolean).join(' · ')
 
     if (e.surface === 'terminal') {
-      const { Text } = $.ui.resolve(e)
-      return <Text color="#D97757">{'▐▛█▜▌ ' + (caption || 'clawd')}</Text>
+      return terminalRow($, e, caption || 'clawd')
     }
 
     const { Box, Text, Svg } = $.ui.resolve(e)
     return (
       <Box flexDirection="row" alignItems="center">
-        <Svg source={scene(pose, shades, helperCount)} alt={ALT[pose]} width={W * U} height={H * U} isInteractive />
+        <Svg source={scene(pose, shades)} alt={ALT[pose]} width={W * U} height={H * U} isInteractive />
+        {showHelpers ? <Svg source={minis(helperCount)} alt={`${helperCount} helper Clawd${helperCount > 1 ? 's' : ''}`} width={MINI_W * U} height={H * U} isInteractive /> : null}
         {caption ? <Text dimColor>{caption}</Text> : null}
       </Box>
     )
