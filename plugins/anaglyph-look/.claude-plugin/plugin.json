@@ -1,0 +1,25 @@
+{
+  "name": "anaglyph-look",
+  "displayName": "Anaglyph Look",
+  "description": "A dark theme with a 3D scene behind the chat for red-cyan glasses: a grid floor rolling toward you, stars, a ringed planet and wireframe shapes floating in and out of the screen.",
+  "author": {
+    "name": "Sam Thomas"
+  },
+  "userConfig": {
+    "depth": {
+      "type": "number",
+      "title": "Depth",
+      "description": "How far the scene reaches behind and in front of the screen. 1 is the default; lower it if lines stay doubled, raise it if the scene looks flat.",
+      "min": 0.2,
+      "max": 2,
+      "default": 1
+    },
+    "glasses": {
+      "type": "string",
+      "title": "Glasses",
+      "description": "How much of the wrong color your lenses let through. clean for glass or good acrylic lenses, typical for most plastic pairs, leaky for cardboard ones that show a faint double image.",
+      "options": ["clean", "typical", "leaky"],
+      "default": "typical"
+    }
+  }
+}
