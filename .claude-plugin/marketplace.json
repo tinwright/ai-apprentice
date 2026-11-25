@@ -39,6 +39,13 @@
       "description": "A pixel buddy above your prompt that Claude designs from your description or a picture, then animates as it thinks, types, waves for approval and sleeps at night.",
       "category": "Mod",
       "tags": ["mod", "companion", "fun"]
+    },
+    {
+      "name": "vim-look",
+      "source": "./plugins/vim-look",
+      "description": "A Vim look for Claude Code: dark terminal grays, monospace everywhere, tildes down the gutter, a live NORMAL, INSERT and COMMAND status line above the prompt, and :w, :q and :wq that answer the way Vim would.",
+      "category": "Mod",
+      "tags": ["mod", "theme", "fun"]
     }
   ]
 }
