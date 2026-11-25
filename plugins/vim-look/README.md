@@ -22,6 +22,8 @@ There is nothing to switch on. The look is always dark, whatever mode the app is
 
 The colors, the type and the tildes draw in the desktop and mobile apps. In a terminal you get the status line and the commands.
 
+A session has one look at a time, so Vim Look and another theme mod such as Skywatch replace each other's colors and backdrop. Turn the other one off to see this one whole.
+
 ## Feedback
 
 Found a bug or have an idea? [Open an issue](https://github.com/tinwright/ai-apprentice/issues/new/choose).

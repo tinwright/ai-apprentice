@@ -22,6 +22,8 @@ No hay nada que activar. El tema es siempre oscuro, sea cual sea el modo de la a
 
 Los colores, la letra y las tildes se dibujan en las aplicaciones de escritorio y móvil. En un terminal tienes la línea de estado y los comandos.
 
+Una sesión tiene un solo tema a la vez, así que Vim Look y otro mod de tema, como Skywatch, se reemplazan mutuamente los colores y el fondo. Desactiva el otro para ver este completo.
+
 ## Comentarios
 
 ¿Has encontrado un error o tienes una idea? [Abre una incidencia](https://github.com/tinwright/ai-apprentice/issues/new/choose).

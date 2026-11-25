@@ -22,6 +22,8 @@ Il n'y a rien à activer. Le thème est toujours sombre, quel que soit le mode d
 
 Les couleurs, la police et les tildes s'affichent dans les applications de bureau et mobile. Dans un terminal, vous avez la ligne d'état et les commandes.
 
+Une session n'a qu'un thème à la fois : Vim Look et un autre mod de thème, comme Skywatch, remplacent chacun les couleurs et le fond de l'autre. Désactivez l'autre pour voir celui-ci en entier.
+
 ## Retours
 
 Un bug ou une idée ? [Ouvrez une discussion](https://github.com/tinwright/ai-apprentice/issues/new/choose).
