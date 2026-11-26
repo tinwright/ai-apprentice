@@ -31,6 +31,27 @@ const TANK_REAR =
   'M-26 -40L26 -40L20 -62L-20 -62Z M-4 -62L-2 -92L2 -92L4 -62' +
   'M-30 -20L30 -20'
 
+// A planet's ring arcing up from the horizon: thin bands of different brightness, with a gap.
+// Each band is [radius, stroke width, opacity].
+const RING_BANDS: ReadonlyArray<readonly [number, number, number]> = Array.from({ length: 32 }, (_, i) => {
+  const r = 1300 + i * 13
+  const isGap = r > 1545 && r < 1600
+  const glow = 0.12 + 0.2 * Math.abs(Math.sin(i * 1.7)) + (i > 20 ? 0.08 : 0)
+  return [r, 4 + (i % 3) * 3, isGap ? 0 : glow] as const
+}).filter(([, , o]) => o > 0)
+
+// A long carrier: a wedge hull, a raised deck and bridge, twin engines, hatched panels,
+// running lights and thrusters. It flies to the right.
+const SHIP =
+  'M-240 -20L120 -34L250 -6L250 6L120 34L-240 20Z' +
+  'M-160 -20L40 -48L110 -32M40 -48L60 -66L92 -66L110 -32' +
+  'M-284 -28h44v20h-44ZM-284 8h44v20h-44Z' +
+  'M-240 0L250 0' +
+  hatch(-220, 110, -18, 18, 22)
+const SHIP_LIGHTS = [-200, -90, 20, 130].map(x => `<circle class="blink" cx="${x}" cy="-24" r="3" stroke="none"/>`).join('')
+const SHIP_THRUST = '<ellipse class="thrust" cx="-298" cy="-18" rx="16" ry="7" fill-opacity=".5"/><ellipse class="thrust" cx="-298" cy="18" rx="16" ry="7" fill-opacity=".5"/>'
+const CRUISE = 80 // seconds for the carrier to cross the sky
+
 type Prop = { path: string; groundX: number; size: number; offset: number; beacon?: boolean }
 
 // What streams toward you, each in its own lane, spread through the lap by `offset`.
@@ -132,8 +153,20 @@ export function arenaScene({ inks, strength, mode, phase, respawn }: ArenaArgs):
 
   // Turning: the sky pans, and the ground pans and leans with it, near parts sweeping faster
   // than far ones. Your own tank stays put in front of you.
+  const ring = s.eyes(
+    `<g clip-path="url(#sky)"><g transform="translate(2200 1500) rotate(-8)">` +
+      RING_BANDS.map(([r, w, o]) => `<ellipse rx="${r}" ry="${f(r * 1.04)}" fill="none" stroke-width="${w}" stroke-opacity="${f(o)}"/>`).join('') +
+      '</g></g>',
+    DEPTH.far,
+  )
+  const ship =
+    `<g transform="translate(0 175)"><g class="ship" style="animation-delay:-${f(phase % CRUISE)}s">` +
+    s.eyes(`<g transform="scale(1.1)"><path d="${SHIP}" fill-opacity=".18" vector-effect="non-scaling-stroke"/>${SHIP_LIGHTS}${SHIP_THRUST}</g>`, -4) +
+    '</g></g>'
+
   const body =
-    `<g class="pan" style="${turning}">${stars(s.eyes, 110, 11)}</g>` +
+    `<clipPath id="sky"><rect x="-2600" y="-400" width="${1600 + 5200}" height="${HORIZON + 400}"/></clipPath>` +
+    `<g class="pan" style="${turning}">${stars(s.eyes, 110, 11)}${ring}${ship}</g>` +
     `<g class="yaw" style="${turning}">` +
     `<g mask="url(#floor)">${flow.svg}${s.floor('2 46')}</g>` +
     props +
@@ -149,6 +182,9 @@ export function arenaScene({ inks, strength, mode, phase, respawn }: ArenaArgs):
   const style =
     BASE_CSS +
     flow.css +
+    `.ship{animation:cruise ${CRUISE}s linear infinite}@keyframes cruise{from{transform:translateX(-900px)}to{transform:translateX(2600px)}}` +
+    '.blink{animation:blink 1.6s steps(2) infinite}@keyframes blink{50%{opacity:.15}}' +
+    '.thrust{transform-box:fill-box;transform-origin:100% 50%;animation:thrust .5s ease-in-out infinite alternate}@keyframes thrust{to{transform:scaleX(1.5);opacity:.6}}' +
     `.pan{animation:pan ${YAW}s ease-in-out infinite alternate}@keyframes pan{from{transform:translateX(-60px)}to{transform:translateX(60px)}}` +
     `.yaw{transform-origin:${VX}px ${HORIZON}px;animation:yaw ${YAW}s ease-in-out infinite alternate}@keyframes yaw{from{transform:translateX(-60px) skewX(5deg)}to{transform:translateX(60px) skewX(-5deg)}}` +
     PROPS.map(approach).join('') +

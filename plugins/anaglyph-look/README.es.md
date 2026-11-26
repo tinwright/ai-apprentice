@@ -23,6 +23,7 @@ Ponte unos lentes rojo y cian, con el lente rojo en el ojo izquierdo, y escribe 
 
 - **`/anaglyph-calibrate`** abre una carta de prueba: las palabras LEFT y RIGHT impresas una sobre otra. Cierra un ojo a la vez: cada lente debe mostrar solo su propia palabra. Oscurece el color que todavía se ve a través del otro lente, mantén los dos con un brillo parecido y pulsa **Save**. La escena detrás de la conversación cambia mientras ajustas, y tus colores se guardan para todas las sesiones.
 - **La arena** está detrás de la conversación, vista justo detrás de tu tanque mientras sigue a otro. Sigue a Claude: quieta cuando no pasa nada, el piso de puntos avanza hacia ti y el mundo gira cuando Claude trabaja, salen disparos hacia el tanque de enfrente cuando se ejecuta una herramienta, las balizas se encienden cuando Claude espera tu respuesta, y el tanque de enfrente explota cuando Claude termina un trabajo que usó una herramienta.
+- **El cielo** muestra el anillo de un planeta que sube desde el horizonte, muy por detrás de todo, y una larga nave nodriza que cruza por delante.
 - **El tablero** sobre el cuadro de texto indica qué hace tu tanque, qué tan llena está la ventana de contexto de Claude, y los disparos y aciertos de la sesión.
 - **`/anaglyph-demo`** muestra todos los estados de la arena en unos 25 segundos, y la línea de estado explica cada uno.
 

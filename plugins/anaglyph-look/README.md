@@ -23,6 +23,7 @@ Put on red-cyan glasses, red lens on the left eye, and type `/anaglyph-calibrate
 
 - **`/anaglyph-calibrate`** opens a test card: the words LEFT and RIGHT printed over each other. Close one eye at a time: each lens should show only its own word. Dim whichever color still shows through the other lens, keep the two about as bright as each other, and press **Save**. The scene behind the chat changes as you go, and your colors are kept for every session.
 - **The arena** sits behind the chat, seen from just behind your own tank as you follow another. It follows Claude: parked while nothing happens, the dotted ground streaming toward you and the world turning while Claude works, bolts flying at the tank ahead when a tool runs, beacons lighting up when Claude is waiting for you, and the tank ahead blowing up when Claude finishes work that used a tool.
+- **The sky** has a planet's ring arcing up from the horizon, far behind everything, and a long carrier cruising across in front of it.
 - **The readout** above the prompt says what your tank is doing, how full Claude's context window is, and the shots and hits this session.
 - **`/anaglyph-demo`** plays every arena state in about 25 seconds, with the status line saying what each one means.
 

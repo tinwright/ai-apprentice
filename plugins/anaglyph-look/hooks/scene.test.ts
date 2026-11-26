@@ -50,6 +50,8 @@ test('the arena parks when idle or waiting, shoots only when firing, and picks u
   expect(at('firing')).toContain('class="working"')
   expect(at('idle')).toContain('.idle .come')
   expect(at('firing')).toContain('class="bolt"')
+  expect(at('idle')).toContain('class="ship"')
+  expect(at('idle')).toContain('clip-path="url(#sky)"')
   expect(at('working')).not.toContain('class="bolt"')
   expect(at('working', 0)).not.toBe(at('working', 7))
 })

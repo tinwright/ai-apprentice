@@ -23,6 +23,7 @@ Mettez des lunettes rouge et cyan, verre rouge sur l'œil gauche, et tapez d'abo
 
 - **`/anaglyph-calibrate`** ouvre une mire : les mots LEFT et RIGHT imprimés l'un sur l'autre. Fermez un œil à la fois : chaque verre ne doit montrer que son propre mot. Assombrissez la couleur qui se voit encore à travers l'autre verre, gardez les deux à peu près aussi lumineuses, puis appuyez sur **Save**. La scène derrière la conversation change au fur et à mesure, et vos couleurs sont gardées pour toutes les sessions.
 - **L'arène** se trouve derrière la conversation, vue juste derrière votre char qui en suit un autre. Elle suit Claude : à l'arrêt quand il ne se passe rien, le sol pointillé défile vers vous et le monde tourne quand Claude travaille, des tirs partent vers le char devant vous quand un outil s'exécute, les balises s'allument quand Claude attend votre réponse, et le char devant explose quand Claude termine un travail qui a utilisé un outil.
+- **Le ciel** montre l'anneau d'une planète qui s'élève depuis l'horizon, loin derrière tout le reste, et un long vaisseau porteur qui passe devant.
 - **Le tableau de bord** au-dessus de la zone de saisie indique ce que fait votre char, le remplissage de la fenêtre de contexte de Claude, et les tirs et coups au but de la session.
 - **`/anaglyph-demo`** montre tous les états de l'arène en vingt-cinq secondes environ, avec la ligne d'état qui explique chacun.
 
