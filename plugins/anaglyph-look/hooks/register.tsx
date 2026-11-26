@@ -314,16 +314,17 @@ export const register: Register = (on, options) => {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (e.plugin !== $.plugin.name || e.props.hasSurvey || (settings.scene !== 'arena' && !s.isDemo)) return next(e)
     const readout = await read($, hud)
-    const { Box, Progress, Text } = $.ui.resolve(e)
+    const { Text } = $.ui.resolve(e)
+    const parts = [
+      `◢ ${CALLED[readout.mode]}`,
+      ...(readout.context === null ? [] : [`Context ${Math.round(readout.context)}%`]),
+      `Shots ${readout.shots}`,
+      `Hits ${readout.hits}`,
+    ]
     return (
-      <Box flexDirection="row" gap={3} flexWrap="wrap">
-        <Text bold color="accent">
-          ◢ {CALLED[readout.mode]}
-        </Text>
-        {readout.context === null ? null : <Progress label="Context" value={readout.context} max={100} valueText={`${Math.round(readout.context)}%`} />}
-        <Text dimColor>Shots {readout.shots}</Text>
-        <Text dimColor>Hits {readout.hits}</Text>
-      </Box>
+      <Text dimColor wrap="truncate">
+        {parts.join('  ·  ')}
+      </Text>
     )
   })
 
