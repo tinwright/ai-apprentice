@@ -48,6 +48,13 @@
       "tags": ["mod", "theme", "fun"]
     },
     {
+      "name": "anaglyph-look",
+      "source": "./plugins/anaglyph-look",
+      "description": "A dark theme with a 3D scene behind the chat for red-cyan glasses: an arena of tanks and beacons that follows what Claude is doing, or a grid with floating shapes, and a calibration step that tunes the colors to your glasses.",
+      "category": "Mod",
+      "tags": ["mod", "theme", "fun"]
+    },
+    {
       "name": "write-like-me",
       "source": "./plugins/write-like-me",
       "description": "Teach Claude to write like you: point it at your blog, notes, docs and chats, and it builds a skill in your own voice, plus a short version for other AI tools.",
