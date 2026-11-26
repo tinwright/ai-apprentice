@@ -50,7 +50,7 @@
     {
       "name": "anaglyph-look",
       "source": "./plugins/anaglyph-look",
-      "description": "A dark theme with a 3D scene behind the chat for red-cyan glasses: a grid floor rolling toward you, stars, a ringed planet and wireframe shapes floating in and out of the screen.",
+      "description": "A dark theme with a 3D scene behind the chat for red-cyan glasses: an arena of tanks and beacons that follows what Claude is doing, or a grid with floating shapes, and a calibration step that tunes the colors to your glasses.",
       "category": "Mod",
       "tags": ["mod", "theme", "fun"]
     }
