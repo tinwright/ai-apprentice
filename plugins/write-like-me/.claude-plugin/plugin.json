@@ -1,0 +1,8 @@
+{
+  "name": "write-like-me",
+  "displayName": "Write Like Me",
+  "description": "Teach Claude to write like you: point it at your blog, notes, docs and chats, and it builds a skill in your own voice, plus a short version for other AI tools.",
+  "author": {
+    "name": "tinwright"
+  }
+}
